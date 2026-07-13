@@ -1,4 +1,5 @@
 using Search.Domain.Catalog.Products.ValueObjects;
+using Search.Domain.Catalog.Tags;
 using Search.Domain.Common;
 using Search.Domain.Common.ValueObjects;
 
@@ -12,7 +13,7 @@ namespace Search.Domain.Catalog.Products;
 public sealed class Product : AggregateRoot<Guid>
 {
     // Backing field per le collezioni: incapsulamento reale, niente Add/Remove dall'esterno.
-    private readonly List<string> _tags = [];
+    private readonly List<Tag> _tags = [];
     private readonly List<string> _barcodes = [];
 
     public Sku Sku { get; private set; } = default!;
@@ -26,8 +27,11 @@ public sealed class Product : AggregateRoot<Guid>
     public Dimensions? Dimensions { get; private set; }
     public decimal? WeightInGrams { get; private set; }
 
-    /// <summary>Etichette libere. Campo di tipo <b>array</b> — abilita filtri "contains any/all".</summary>
-    public IReadOnlyCollection<string> Tags => _tags.AsReadOnly();
+    /// <summary>
+    /// Tag associati: relazione <b>molti-a-molti</b> con <see cref="Tag"/> (EF la gestisce come
+    /// skip navigation sulla tabella di giunzione). Nella ricerca è proiettata sui nomi/id dei tag.
+    /// </summary>
+    public IReadOnlyCollection<Tag> Tags => _tags.AsReadOnly();
 
     /// <summary>Codici a barre (EAN/UPC). Anch'esso un campo array.</summary>
     public IReadOnlyCollection<string> Barcodes => _barcodes.AsReadOnly();
@@ -118,14 +122,19 @@ public sealed class Product : AggregateRoot<Guid>
         RaiseDomainEvent(new ProductDiscontinuedDomainEvent(Id));
     }
 
-    public void AddTag(string tag)
+    public void AddTag(Tag tag)
     {
-        var normalized = NormalizeTag(tag);
-        if (!_tags.Contains(normalized))
-            _tags.Add(normalized);
+        ArgumentNullException.ThrowIfNull(tag);
+        // Dedup per identità dell'entità (Entity.Equals confronta l'Id): lo stesso tag non si ripete.
+        if (!_tags.Contains(tag))
+            _tags.Add(tag);
     }
 
-    public void RemoveTag(string tag) => _tags.Remove(NormalizeTag(tag));
+    public void RemoveTag(Tag tag)
+    {
+        ArgumentNullException.ThrowIfNull(tag);
+        _tags.Remove(tag);
+    }
 
     public void AddBarcode(string barcode)
     {
@@ -140,12 +149,5 @@ public sealed class Product : AggregateRoot<Guid>
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("Il nome del prodotto è obbligatorio.");
         return name.Trim();
-    }
-
-    private static string NormalizeTag(string tag)
-    {
-        if (string.IsNullOrWhiteSpace(tag))
-            throw new DomainException("Il tag non può essere vuoto.");
-        return tag.Trim().ToLowerInvariant();
     }
 }

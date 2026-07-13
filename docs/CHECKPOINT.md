@@ -20,7 +20,7 @@ Progetto `Search.Domain` (puro, nessuna dipendenza EF/Mongo). Build a 0 warning,
 - `Common/`: `Entity` (uguaglianza per identità), `AuditableEntity` (audit: created/lastModified + soft delete),
   `AggregateRoot` (+ domain events), `ValueObject` (uguaglianza strutturale), `DomainException`/`DomainGuard`,
   `Money`.
-- `Catalog/`: `Brand`, `Product` (+ `Sku`, `Dimensions`, `ProductStatus`), eventi. Campi array: `Tags`, `Barcodes`.
+- `Catalog/`: `Brand`, `Product` (+ `Sku`, `Dimensions`, `ProductStatus`), eventi. `Barcodes` = array scalare. `Tags` = **molti-a-molti** con l'entità `Tag` (aggregato a sé, `Catalog/Tags/Tag.cs`), skip navigation EF; in ricerca proiettata su `tags` (nomi) e `tagIds`.
 - `Ordering/`: `Order` (+ `OrderLine`, `Address`, `CustomerInfo`, `OrderStatus`), eventi. Array: `Lines`.
 - Decisioni chiave: modello ricco (setter privati + factory + metodi); audit via hook invocati dall'infra
   (`ApplyCreationAudit`/`ApplyModificationAudit`); soft delete come metodo di dominio; aggregati separati

@@ -9,6 +9,7 @@ using Search.Infrastructure.Mongo;
 using Search.Domain.Catalog.Brands;
 using Search.Domain.Catalog.Products;
 using Search.Domain.Catalog.Products.ValueObjects;
+using Search.Domain.Catalog.Tags;
 using Search.Domain.Common;
 using Search.Domain.Common.ValueObjects;
 using Search.Domain.Ordering.Orders;
@@ -102,11 +103,16 @@ Console.WriteLine("== SEARCH ENGINE (opzione 1) ==");
 // Dataset in memoria (in produzione sarebbe un IQueryable<Product> di EF Core su Postgres).
 var catalogBrandId = Guid.NewGuid();
 
+// Catalogo tag condiviso: lo stesso Tag è riusato da più prodotti (è il senso del molti-a-molti).
+var tagCatalog = new Dictionary<string, Tag>(StringComparer.OrdinalIgnoreCase);
+Tag TagByName(string name) =>
+    tagCatalog.TryGetValue(name, out var existing) ? existing : tagCatalog[name] = Tag.Create(name);
+
 Product BuildProduct(string sku, string productName, decimal price, ProductStatus status, params string[] tags)
 {
     var p = Product.Create(Sku.Create(sku), productName, catalogBrandId, Money.Of(price, "EUR"));
     foreach (var t in tags)
-        p.AddTag(t);
+        p.AddTag(TagByName(t));
     p.AddStock(10);
     p.Publish(); // -> Active
     if (status == ProductStatus.OutOfStock)

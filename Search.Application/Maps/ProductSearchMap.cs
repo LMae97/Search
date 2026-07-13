@@ -33,8 +33,12 @@ public sealed class ProductSearchMap : EntitySearchMap<Product>
         MapField("status", p => p.Status);
         MapField("weightInGrams", p => p.WeightInGrams);
 
-        // Array
-        MapArray("tags", p => p.Tags);
+        // Relazione molti-a-molti con Tag: proiettata sugli scalari cercabili (nome e id).
+        // Con EF, un filtro su questi diventa una subquery EXISTS (niente moltiplicazione di righe).
+        MapArray("tags", p => p.Tags.Select(t => t.Name));
+        MapArray("tagIds", p => p.Tags.Select(t => t.Id));
+
+        // Array scalare "vero" (su Postgres sarebbe una colonna text[]).
         MapArray("barcodes", p => p.Barcodes);
 
         // Colonne di audit / soft delete (richiedono il permesso ViewAudit)
