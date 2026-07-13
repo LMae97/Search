@@ -57,12 +57,14 @@ public sealed class LinqSearchExecutor<TEntity>
                 ? (ascending ? "OrderBy" : "OrderByDescending")
                 : (ascending ? "ThenBy" : "ThenByDescending");
 
+            var selector = field.Selector
+                ?? throw new NotSupportedException($"Ordinamento non supportato sul campo dinamico '{sort.Field}' via LINQ.");
             var method = typeof(Queryable).GetMethods()
                 .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(TEntity), field.Selector.ReturnType);
+                .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
 
             var currentSource = i == 0 ? query : ordered!;
-            ordered = (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { currentSource, field.Selector })!;
+            ordered = (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { currentSource, selector })!;
         }
 
         return ordered!;
@@ -79,6 +81,8 @@ public sealed class LinqSearchExecutor<TEntity>
         {
             if (!_map.TryGetField(name, out var field))
                 throw new InvalidOperationException($"Proiezione su campo non mappato '{name}'.");
+            if (field.Selector is null)
+                throw new NotSupportedException($"Il campo dinamico '{name}' non è proiettabile via LINQ.");
             getters.Add((field.Name, CompileGetter(field.Selector)));
         }
 

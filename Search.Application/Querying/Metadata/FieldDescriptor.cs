@@ -21,13 +21,19 @@ public sealed class FieldDescriptor
     public Type ClrType { get; }
 
     /// <summary>
-    /// Selettore verso la proprietà: TEntity -> valore scalare oppure TEntity -> IEnumerable<Element>.
-    /// È il ponte tra il nome pubblico del campo e la proprietà reale dell'entità:
-    /// nessuna stringa "grezza" viene mai utilizzata direttamente verso il database.
+    /// Selettore verso la proprietà: TEntity -> valore scalare oppure TEntity -> IEnumerable&lt;Element&gt;.
+    /// È il ponte tra nome pubblico e proprietà reale (niente stringhe grezze verso il DB).
+    /// <b>Null per i campi dinamici</b>, che non hanno una proprietà CLR e usano <see cref="StoragePath"/>.
     /// </summary>
-    public LambdaExpression Selector { get; }
+    public LambdaExpression? Selector { get; }
 
     public IReadOnlySet<FilterOperator> AllowedOperators { get; }
+
+    /// <summary>
+    /// Path esplicito nello store per i campi <b>dinamici</b> (es. "attributes.zonaConsegna" su Mongo).
+    /// Null per i campi statici, dove il path si deriva dal <see cref="Selector"/>.
+    /// </summary>
+    public string? StoragePath { get; init; }
 
     // --- Metadati di presentazione / autorizzazione (decorano il campo tecnico) ---
 
@@ -51,7 +57,7 @@ public sealed class FieldDescriptor
         FieldKind kind,
         bool isArray,
         Type clrType,
-        LambdaExpression selector,
+        LambdaExpression? selector,
         IReadOnlySet<FilterOperator> allowedOperators)
     {
         Name = name;

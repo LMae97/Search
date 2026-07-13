@@ -51,7 +51,9 @@ public sealed class LinqFilterTranslator<TEntity>
         if (!_map.TryGetField(node.Field, out var field))
             throw new InvalidOperationException($"Campo '{node.Field}' non mappato (validare prima di tradurre).");
 
-        var member = ParameterReplacer.Rebase(field.Selector, parameter);
+        var selector = field.Selector
+            ?? throw new NotSupportedException($"Il campo dinamico '{field.Name}' non è supportato dal translator LINQ.");
+        var member = ParameterReplacer.Rebase(selector, parameter);
 
         return field.IsArray
             ? BuildArray(node, field, member)

@@ -3,7 +3,9 @@ using Search.Application.Maps;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Filters;
+using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Linq;
+using Search.Application.Querying.Metadata;
 using Search.Application.Querying.Validation;
 using Search.Infrastructure.Mongo;
 using Search.Domain.Catalog.Brands;
@@ -261,6 +263,50 @@ void RunAs(string who, SearchCaller caller)
 
 RunAs("Manager (ha ViewPrice)", manager);
 RunAs("Clerk (NON ha ViewPrice)", clerk);
+
+Console.WriteLine();
+Console.WriteLine("== CAMPI DINAMICI PER TENANT (fetta 2) ==");
+
+var spaceWithZone = Guid.NewGuid();
+
+// Definizioni dinamiche (in produzione da DB, per spaceId). Qui una sola: "deliveryZone".
+var dynamicFields = new InMemoryDynamicFieldProvider();
+dynamicFields.Add(new DynamicFieldDefinition(
+    SpaceId: spaceWithZone,
+    EntityName: "order",
+    Name: "deliveryZone",
+    Kind: FieldKind.String,
+    IsArray: false,
+    StoragePath: "attributes.deliveryZone",
+    Label: "Zona di consegna",
+    Section: "Logistica"));
+
+var mapProvider = new SearchMapProvider(
+    new IEntitySearchMap[] { new OrderSearchMap(), new ProductSearchMap() },
+    dynamicFields);
+
+// Filtro che mescola un campo statico (status) e uno dinamico (deliveryZone).
+var dynamicRequestFilter = Filter.And(
+    Filter.In("status", "Paid", "Shipped"),
+    Filter.Eq("deliveryZone", "Nord"));
+
+void RunOrderSearch(string who, SearchCaller caller)
+{
+    var effective = mapProvider.GetEffectiveMap("order", caller);
+    var sanitized = new SearchRequestSanitizer(effective).Sanitize(new SearchRequest
+    {
+        Filter = dynamicRequestFilter,
+        Projection = ["orderNumber", "status", "deliveryZone"]
+    });
+    var query = new MongoFilterTranslator<Order>(effective).BuildFilterDocument(sanitized.Filter!);
+
+    Console.WriteLine($"[{who}] deliveryZone in mappa: {effective.TryGetField("deliveryZone", out _)} " +
+                      $"| proiezione: {string.Join(", ", sanitized.Projection)}");
+    Console.WriteLine("   query Mongo: " + query.ToJson());
+}
+
+RunOrderSearch("Tenant CON campo dinamico", new SearchCaller(spaceWithZone, new HashSet<Guid>()));
+RunOrderSearch("Tenant SENZA (altro spaceId)", new SearchCaller(Guid.NewGuid(), new HashSet<Guid>()));
 
 static string FormatValue(object? value) => value switch
 {

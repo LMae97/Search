@@ -51,7 +51,17 @@ In `Search.Application/Querying/Authorization`:
 - `SearchRequestSanitizer`: **pota** (non rifiuta) filtro/sort/proiezione sui campi assenti. Semantica: togliere da AND allarga, da OR restringe, NOT/AND/OR svuotati spariscono. Proiezione vuota ⇒ campi `VisibleByDefault`.
 - Enforcement dei 3 requisiti (vedere/filtrare/ordinare) da un unico meccanismo (map effettiva) + riuso di validator/executor. Demo: Manager (con ViewPrice) 2 match con colonna price; Clerk (senza) 3 match (AND allargato) senza price.
 
-Prossime fette STEP 2: (2) campi dinamici per `spaceId` (`FieldDescriptor` risolto via path-stringa su `attributes.*` Mongo, definizioni da DB); (3) endpoint `GET /search/{entity}/fields` + `BaseSearchResponseDto`/`ColumnsHeaderDto`; (4) persistenza definizioni dinamiche + overlay config. Poi: scoping dati per `spaceId`.
+### Fetta 2 — campi dinamici per tenant ✅ (fatto e verificato)
+In `Search.Application/Querying/Dynamic` + `Querying/Metadata/MaterializedSearchMap`:
+- `FieldDescriptor`: `Selector` ora nullable + `StoragePath` (path esplicito per i dinamici, es. `attributes.deliveryZone`).
+- `DynamicFieldDefinition` (per `SpaceId`+entità), `IDynamicFieldProvider` (+`InMemory`), `DynamicFieldFactory` (definizione → descriptor).
+- `SearchMapProvider.GetEffectiveMap(entity, caller)` = statici (codice) + dinamici (per spaceId) → merge (`MaterializedSearchMap`) → filtro permessi (`EffectiveSearchMap`).
+- Translator Mongo usa `StoragePath` per i dinamici; i translator/executor LINQ lanciano un errore chiaro sui dinamici (sono store-Mongo, niente selettore CLR).
+- Demo: tenant con `deliveryZone` → query `{... "attributes.deliveryZone": "Nord"}`; altro tenant → campo assente, potato.
+
+Prossime fette STEP 2: (3) endpoint `GET /search/{entity}/fields` + `BaseSearchResponseDto`/`ColumnsHeaderDto`; (4) persistenza definizioni dinamiche + overlay config (DB). Poi: scoping dati per `spaceId` sulle query; wiring EF Core reale.
+
+**Nota di design — ricerca/proiezione su campo di un altro aggregato (es. `brandName`).** Non serve per forza una navigation property. 4 opzioni: (A) navigation `Product.Brand` (join to-one, sicuro come cardinalità, ma rompe il confine d'aggregato; solo Postgres); (B) snapshot denormalizzato `Product.BrandName` (nessun join, da sincronizzare su rename via evento — coerente con `CustomerInfo` sull'ordine); (C) read model `ProductSearchView` (brandName colonna piatta, write model puro); (D) resolve-by-id (nome→id→`brandId IN (...)` + stitch). Raccomandazione: se la ricerca è read-model → C/B; navigation solo come concessione pragmatica per la lettura. Decisione rimandata (tenuta come nota).
 
 Aperti da discutere: layer DTO/JSON (deserializzazione polimorfica `System.Text.Json`), **case-insensitivity** su Postgres (`ILIKE`/`citext`) coerente con Mongo, campi array di sotto-documenti (`lines.sku`), test d'integrazione su Mongo reale.
 
