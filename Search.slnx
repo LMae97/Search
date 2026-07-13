@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Search/Search.csproj" />
+  <Project Path="Search.Domain/Search.Domain.csproj" />
+  <Project Path="Search.Application/Search.Application.csproj" />
+  <Project Path="Search.Infrastructure.Mongo/Search.Infrastructure.Mongo.csproj" />
+</Solution>
