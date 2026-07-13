@@ -38,12 +38,12 @@ public sealed class LinqFilterTranslator<TEntity>
             return Expression.Not(Build(node.Children[0], parameter));
 
         var children = node.Children.Select(child => Build(child, parameter)).ToList();
-        Expression seed = Expression.Constant(node.Operator == LogicalOperator.And);
         Func<Expression, Expression, Expression> combine = node.Operator == LogicalOperator.And
             ? (a, b) => Expression.AndAlso(a, b)
             : (a, b) => Expression.OrElse(a, b);
 
-        return children.Aggregate(seed, combine);
+        // AND/OR hanno sempre >= 1 figlio (garantito da validazione/sanitizer): nessun seed.
+        return children.Aggregate(combine);
     }
 
     private Expression BuildComparison(ComparisonFilterNode node, ParameterExpression parameter)

@@ -1,6 +1,12 @@
 # Checkpoint — Progetto "Search" (BE)
 
-> Ultimo aggiornamento: 2026-07-10
+> Ultimo aggiornamento: 2026-07-13
+
+> **DECISIONE (2026-07-13):** si procede verso definizioni dei campi **a DB** (approccio data-driven,
+> ritenuto più diretto per l'applicazione). Le fette 1-2 (motore + autorizzazione + campi dinamici,
+> in memoria) restano la base. Prossimo lavoro: portare le definizioni su DB. Nodo aperto da decidere:
+> come gestire il *binding* per le entità relazionali (path-string+reflection vs overlay vs Dynamic LINQ).
+> Vedi sezione "Campi a DB" in fondo.
 
 ## Obiettivo
 Backend per schermate di ricerca su più entità del sistema. Il FE deve poter:
@@ -58,8 +64,37 @@ In `Search.Application/Querying/Dynamic` + `Querying/Metadata/MaterializedSearch
 - `SearchMapProvider.GetEffectiveMap(entity, caller)` = statici (codice) + dinamici (per spaceId) → merge (`MaterializedSearchMap`) → filtro permessi (`EffectiveSearchMap`).
 - Translator Mongo usa `StoragePath` per i dinamici; i translator/executor LINQ lanciano un errore chiaro sui dinamici (sono store-Mongo, niente selettore CLR).
 - Demo: tenant con `deliveryZone` → query `{... "attributes.deliveryZone": "Nord"}`; altro tenant → campo assente, potato.
+- **NB:** questi file dynamic-only sono stati poi **consolidati** nel sistema unificato data-driven (vedi "Campi a DB"): concetti invariati, `DynamicFieldDefinition`→`SearchFieldDefinition`, `SearchMapProvider`→`DbBackedSearchMapProvider`.
 
-Prossime fette STEP 2: (3) endpoint `GET /search/{entity}/fields` + `BaseSearchResponseDto`/`ColumnsHeaderDto`; (4) persistenza definizioni dinamiche + overlay config (DB). Poi: scoping dati per `spaceId` sulle query; wiring EF Core reale.
+## Campi a DB (fase decisa 2026-07-13)
+Obiettivo: le definizioni dei campi (statici + dinamici) vivono a DB, come nel vecchio progetto (`SearchField`).
+Nodo tecnico centrale: **il binding non si serializza** (non puoi salvare una lambda). Risoluzioni:
+- **Mongo/document**: si salva il path (`customer.email`, `attributes.zonaConsegna`) → il translator Mongo lo usa
+  direttamente. **Già supportato** (StoragePath, fetta 2). Per gli ordini è quasi gratis.
+- **Relazionale/EF**: si salva una property-path (`Price.Amount`) e si **ricostruisce l'Expression via reflection**
+  al load (perde la type-safety compile-time → validare il path al caricamento). Caso M2M/collezioni (`Tags.Name`)
+  = ricostruzione di un `Select(...)` → più complesso. Alternativa: Dynamic LINQ (come vecchio progetto).
+Sicurezza: la tabella diventa la whitelist → limitare la scrittura, validare i path al load, mai concatenare in SQL.
+
+**Binding scelto (2026-07-13): path-string + rebuild Expression via reflection.** ✅ Factory fatta e verificata:
+- `Querying/Metadata/FieldKindResolver` (estratto da EntitySearchMap, riusabile).
+- `Querying/Metadata/PropertyPathSelectorFactory.Build(entityType, "Price.Amount")` → `LambdaExpression` (valida il path, fail-fast). Demo: mappa prodotto costruita da sole stringhe → stesso risultato della mappa in codice. Gestisce catene scalari (anche annidate in value object) + enum. **Non ancora**: proiezioni su collezioni (`Tags.Name` → `Select`).
+
+**Sistema unificato data-driven ✅ (fatto e verificato).** In `Querying/Dynamic` (i 5 file "dynamic-only" della fetta 2 sono stati rimossi e sostituiti — un solo sistema):
+- `StoreKind`, `SearchEntity` (+`Relational<T>`/`Document`), `SearchEntityRegistry`.
+- `SearchFieldDefinition` (record unico: EntityName, Name, Kind, IsArray, Path, Label, Section, Visible, RequiredPermissionId, SpaceId?); `ISearchFieldDefinitionProvider` (+`InMemory`).
+- `SearchFieldDefinitionResolver`: relazionale → `PropertyPathSelectorFactory` (Expression, tipo/operatori dal tipo reale); documentale → `StoragePath`.
+- `DbBackedSearchMapProvider.GetEffectiveMap(entity, caller)` = definizioni (globali+tenant) → descrittori → merge → filtro permessi. Downstream invariato.
+- Helper condivisi in `Querying/Metadata`: `FieldKindResolver`, `PropertyPathSelectorFactory`.
+- Demo verificata: product (relazionale, in memoria) + order (documentale, query Mongo) + campo dinamico per tenant + pruning per altro tenant.
+
+✅ **(c) collezioni/M2M da path** — `PropertyPathSelectorFactory` ora gestisce le collezioni: `"Tags.Name"` → `x.Tags.Select(t => t.Name)` (+`GetEnumerableElementType`); il resolver relazionale ricava tipo/operatori dall'elemento per i campi array. Verificato: filtro `tags containsAny` su prodotti con `Tag` M2M.
+✅ **DB simulato** — le definizioni sono in `Search/SimulatedFieldDefinitionDatabase.cs` (righe pre-caricate, `ISearchFieldDefinitionProvider`); il seeding è uscito dalla demo. Rimpiazzabile con un provider EF senza toccare il resto.
+
+### Pulizia (2026-07-13) ✅
+Consolidato su **un solo percorso DB-driven**. Rimossi (non più necessari): `EntitySearchMap<T>`, `Maps/ProductSearchMap`, `Maps/OrderSearchMap`, `Search.Infrastructure.Mongo/MongoFieldPath` (+ cartella `Maps`). Semplificati: `EffectiveSearchMap` ora è una **factory statica** `For(entity, fields, caller)` che riusa `MaterializedSearchMap` (niente più dizionario duplicato); `MongoFilterTranslator` usa solo `StoragePath` (niente fallback selettore); `LinqFilterTranslator.BuildLogical` senza costante seed. `Program.cs` riscritto: solo demo DB-driven (product relazionale con manager/clerk + order documentale con tenant). NB: i riferimenti a quei file nelle sezioni precedenti sono storici.
+
+Prossimo: (d) **endpoint campi** (`GET /search/{entity}/fields` + `BaseSearchResponseDto`/`ColumnsHeaderDto`, host ASP.NET Core); (e) **scoping dati per `spaceId`** sulle query; (f) **persistenza EF** reale (rimandata su richiesta di Lorenzo).
 
 **Nota di design — ricerca/proiezione su campo di un altro aggregato (es. `brandName`).** Non serve per forza una navigation property. 4 opzioni: (A) navigation `Product.Brand` (join to-one, sicuro come cardinalità, ma rompe il confine d'aggregato; solo Postgres); (B) snapshot denormalizzato `Product.BrandName` (nessun join, da sincronizzare su rename via evento — coerente con `CustomerInfo` sull'ordine); (C) read model `ProductSearchView` (brandName colonna piatta, write model puro); (D) resolve-by-id (nome→id→`brandId IN (...)` + stitch). Raccomandazione: se la ricerca è read-model → C/B; navigation solo come concessione pragmatica per la lettura. Decisione rimandata (tenuta come nota).
 

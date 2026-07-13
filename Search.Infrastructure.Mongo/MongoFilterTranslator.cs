@@ -90,11 +90,9 @@ public sealed class MongoFilterTranslator<TDocument>
         if (!_map.TryGetField(node.Field, out var field))
             throw new InvalidOperationException($"Campo '{node.Field}' non mappato (validare prima di tradurre).");
 
-        // Campo statico: path derivato dal selettore. Campo dinamico: path esplicito.
+        // Store documentale: il campo porta sempre un path esplicito (StoragePath).
         var path = field.StoragePath
-            ?? (field.Selector is { } selector
-                ? MongoFieldPath.From(selector)
-                : throw new InvalidOperationException($"Il campo '{field.Name}' non ha né StoragePath né Selector."));
+            ?? throw new InvalidOperationException($"Il campo '{field.Name}' non ha uno StoragePath (richiesto per lo store documentale).");
 
         BsonValue Value(object? raw) => ToBson(ValueCoercion.Coerce(raw, field.ClrType));
         BsonArray Array() => new(node.Values.Select(Value));
