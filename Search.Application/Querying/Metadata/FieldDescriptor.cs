@@ -29,6 +29,23 @@ public sealed class FieldDescriptor
 
     public IReadOnlySet<FilterOperator> AllowedOperators { get; }
 
+    // --- Metadati di presentazione / autorizzazione (decorano il campo tecnico) ---
+
+    /// <summary>Etichetta per il FE. Default = <see cref="Name"/>.</summary>
+    public string Label { get; init; } = string.Empty;
+
+    /// <summary>Sezione/gruppo per la UI (opzionale).</summary>
+    public string? Section { get; init; }
+
+    /// <summary>Se il campo è mostrato di default in tabella. È presentazione, NON autorizzazione.</summary>
+    public bool VisibleByDefault { get; init; } = true;
+
+    /// <summary>
+    /// Permesso richiesto per vedere/filtrare/ordinare il campo. Null = nessun permesso richiesto.
+    /// Se l'utente non lo possiede, il campo sparisce dalla <c>EffectiveSearchMap</c>.
+    /// </summary>
+    public Guid? RequiredPermissionId { get; init; }
+
     public FieldDescriptor(
         string name,
         FieldKind kind,

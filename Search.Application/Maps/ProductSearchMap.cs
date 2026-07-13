@@ -1,3 +1,4 @@
+using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Metadata;
 using Search.Domain.Catalog.Products;
 
@@ -24,8 +25,8 @@ public sealed class ProductSearchMap : EntitySearchMap<Product>
         MapField("category", p => p.Category);
 
         // Prezzo (value object -> due campi proiettabili distinti)
-        MapField("price", p => p.Price.Amount);
-        MapField("currency", p => p.Price.Currency);
+        MapField("price", p => p.Price.Amount, label: "Prezzo", section: "Economici", requiredPermissionId: SearchPermissions.ViewPrice);
+        MapField("currency", p => p.Price.Currency, section: "Economici");
 
         // Numerici / stato
         MapField("stock", p => p.StockQuantity);
@@ -36,10 +37,10 @@ public sealed class ProductSearchMap : EntitySearchMap<Product>
         MapArray("tags", p => p.Tags);
         MapArray("barcodes", p => p.Barcodes);
 
-        // Colonne di audit / soft delete (ricercabili e proiettabili)
-        MapField("createdAt", p => p.CreatedAt);
-        MapField("createdBy", p => p.CreatedBy);
-        MapField("lastModifiedAt", p => p.LastModifiedAt);
-        MapField("isDeleted", p => p.IsDeleted);
+        // Colonne di audit / soft delete (richiedono il permesso ViewAudit)
+        MapField("createdAt", p => p.CreatedAt, section: "Audit", requiredPermissionId: SearchPermissions.ViewAudit);
+        MapField("createdBy", p => p.CreatedBy, section: "Audit", requiredPermissionId: SearchPermissions.ViewAudit);
+        MapField("lastModifiedAt", p => p.LastModifiedAt, section: "Audit", requiredPermissionId: SearchPermissions.ViewAudit);
+        MapField("isDeleted", p => p.IsDeleted, section: "Audit");
     }
 }

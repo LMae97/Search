@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using Search.Application.Maps;
 using Search.Application.Querying;
+using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Filters;
 using Search.Application.Querying.Linq;
 using Search.Application.Querying.Validation;
@@ -221,6 +222,39 @@ var mongoTranslator = new MongoFilterTranslator<Order>(orderMap);
 var mongoQuery = mongoTranslator.BuildFilterDocument(orderFilter);
 Console.WriteLine("Query Mongo generata dallo stesso filtro:");
 Console.WriteLine("  " + mongoQuery.ToJson());
+
+Console.WriteLine();
+Console.WriteLine("== AUTORIZZAZIONE PER CAMPO (fetta 1) ==");
+
+var tenant = Guid.NewGuid();
+var manager = new SearchCaller(tenant, new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
+var clerk = new SearchCaller(tenant, new HashSet<Guid>()); // nessun permesso su price/audit
+
+// Stessa identica richiesta per entrambi: filtro su price + tag, proiezione con price, sort per price.
+var authRequest = new SearchRequest
+{
+    Filter = Filter.And(
+        Filter.Gte("price", 10),
+        Filter.ArrayContainsAny("tags", "sale", "novità")),
+    Projection = ["name", "price", "tags"],
+    Sort = [new SortField("price", SortDirection.Descending)]
+};
+
+void RunAs(string who, SearchCaller caller)
+{
+    var effectiveMap = new EffectiveSearchMap(productMap, caller);
+    var sanitized = new SearchRequestSanitizer(effectiveMap).Sanitize(authRequest);
+    new SearchRequestValidator(effectiveMap).Validate(sanitized);
+    var res = new LinqSearchExecutor<Product>(effectiveMap).Execute(products.AsQueryable(), sanitized);
+
+    var columns = res.Items.Count > 0 ? string.Join(", ", res.Items[0].Keys) : "(nessuna colonna)";
+    Console.WriteLine($"[{who}] colonne restituite: {columns} | match: {res.TotalCount}");
+    foreach (var row in res.Items)
+        Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
+}
+
+RunAs("Manager (ha ViewPrice)", manager);
+RunAs("Clerk (NON ha ViewPrice)", clerk);
 
 static string FormatValue(object? value) => value switch
 {

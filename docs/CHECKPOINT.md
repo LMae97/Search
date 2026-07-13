@@ -43,7 +43,17 @@ Blocchi:
 
 Note translator Mongo (trade-off da conoscere): il `BsonDocument` è costruito a mano (leggibile e testabile) ma **assume convenzioni di serializzazione** (camelCase per i path, enum come stringa, decimal come Decimal128, Guid come stringa). In produzione devono combaciare col BsonClassMap registrato; alternativa "a prova di convenzione": costruire il `FilterDefinition` col builder tipizzato del driver usando i selettori. NOT reso con `$nor` (non `$not`, che opera solo su singolo campo). Contains/StartsWith/EndsWith via `$regex` con opzione `i` (case-insensitive).
 
-Aperti da discutere: layer DTO/JSON (deserializzazione polimorfica `System.Text.Json`), **case-insensitivity** su Postgres (`ILIKE`/`citext`) coerente con Mongo, campi array di sotto-documenti (`lines.sku`), endpoint API, test d'integrazione su Mongo reale.
+### Layer metadati + autorizzazione per campo — fetta 1 ✅ (fatto e verificato)
+In `Search.Application/Querying/Authorization`:
+- `FieldDescriptor` esteso con `Label`, `Section`, `VisibleByDefault`, `RequiredPermissionId`; `MapField`/`MapArray` con parametri opzionali per popolarli.
+- `SearchCaller(SpaceId, Permissions)`; `SearchPermissions` (placeholder Guid).
+- `EffectiveSearchMap(source, caller)`: mappa filtrata per permesso → "niente permesso ≡ campo assente".
+- `SearchRequestSanitizer`: **pota** (non rifiuta) filtro/sort/proiezione sui campi assenti. Semantica: togliere da AND allarga, da OR restringe, NOT/AND/OR svuotati spariscono. Proiezione vuota ⇒ campi `VisibleByDefault`.
+- Enforcement dei 3 requisiti (vedere/filtrare/ordinare) da un unico meccanismo (map effettiva) + riuso di validator/executor. Demo: Manager (con ViewPrice) 2 match con colonna price; Clerk (senza) 3 match (AND allargato) senza price.
+
+Prossime fette STEP 2: (2) campi dinamici per `spaceId` (`FieldDescriptor` risolto via path-stringa su `attributes.*` Mongo, definizioni da DB); (3) endpoint `GET /search/{entity}/fields` + `BaseSearchResponseDto`/`ColumnsHeaderDto`; (4) persistenza definizioni dinamiche + overlay config. Poi: scoping dati per `spaceId`.
+
+Aperti da discutere: layer DTO/JSON (deserializzazione polimorfica `System.Text.Json`), **case-insensitivity** su Postgres (`ILIKE`/`citext`) coerente con Mongo, campi array di sotto-documenti (`lines.sku`), test d'integrazione su Mongo reale.
 
 ## Note / preferenze
 - Focus dichiarato: **leggibilità e manutenibilità**.

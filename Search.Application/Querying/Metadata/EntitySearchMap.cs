@@ -35,26 +35,46 @@ public abstract class EntitySearchMap<TEntity> : IEntitySearchMap
     protected void MapField<TField>(
         string name,
         Expression<Func<TEntity, TField>> selector,
+        string? label = null,
+        string? section = null,
+        bool visible = true,
+        Guid? requiredPermissionId = null,
         IEnumerable<FilterOperator>? operators = null)
     {
         var (kind, underlying) = ResolveKind(typeof(TField));
         var allowed = operators is null
             ? OperatorRules.DefaultFor(kind, isArray: false)
             : new HashSet<FilterOperator>(operators);
-        Register(new FieldDescriptor(name, kind, isArray: false, underlying, selector, allowed));
+        Register(new FieldDescriptor(name, kind, isArray: false, underlying, selector, allowed)
+        {
+            Label = label ?? name,
+            Section = section,
+            VisibleByDefault = visible,
+            RequiredPermissionId = requiredPermissionId
+        });
     }
 
     /// <summary>Mappa un campo array/collezione.</summary>
     protected void MapArray<TElement>(
         string name,
         Expression<Func<TEntity, IEnumerable<TElement>>> selector,
+        string? label = null,
+        string? section = null,
+        bool visible = true,
+        Guid? requiredPermissionId = null,
         IEnumerable<FilterOperator>? operators = null)
     {
         var (kind, underlying) = ResolveKind(typeof(TElement));
         var allowed = operators is null
             ? OperatorRules.DefaultFor(kind, isArray: true)
             : new HashSet<FilterOperator>(operators);
-        Register(new FieldDescriptor(name, kind, isArray: true, underlying, selector, allowed));
+        Register(new FieldDescriptor(name, kind, isArray: true, underlying, selector, allowed)
+        {
+            Label = label ?? name,
+            Section = section,
+            VisibleByDefault = visible,
+            RequiredPermissionId = requiredPermissionId
+        });
     }
 
     private void Register(FieldDescriptor descriptor)
