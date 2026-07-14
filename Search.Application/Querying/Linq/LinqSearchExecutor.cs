@@ -5,9 +5,13 @@ namespace Search.Application.Querying.Linq;
 
 /// <summary>
 /// Esegue una <see cref="SearchRequest"/> su un <see cref="IQueryable{T}"/> (EF Core o
-/// LINQ-to-Objects): applica filtro, ordinamento, conteggio totale, paginazione e proiezione
-/// dinamica verso dizionari (nome campo → valore). La proiezione a dizionario realizza il
-/// requisito "ogni campo proiettabile" senza dover definire un DTO per ogni combinazione.
+/// LINQ-to-Objects): filtro, ordinamento, conteggio, paginazione e <b>proiezione spinta nella query</b>.
+/// <para>
+/// La proiezione costruisce un <c>Select</c> dinamico verso <c>object[]</c> con i soli campi richiesti:
+/// così EF seleziona solo quelle colonne (niente <c>SELECT *</c>) e traduce i campi collezione (es. i tag)
+/// in subquery — invece di materializzare l'intera entità e proiettare in memoria (che, sotto EF, non
+/// caricherebbe le navigation e restituirebbe collezioni vuote).
+/// </para>
 /// </summary>
 public sealed class LinqSearchExecutor<TEntity>
 {
@@ -31,12 +35,24 @@ public sealed class LinqSearchExecutor<TEntity>
 
         var total = query.LongCount();
 
-        var page = query
+        var (projection, fieldNames) = BuildProjection(request.Projection);
+
+        // La proiezione è spinta nella query: EF emette SELECT <solo colonne richieste> (+ subquery collezioni).
+        var rows = query
             .Skip(request.Page.Skip)
             .Take(request.Page.Size)
+            .Select(projection)
             .ToList();
 
-        var items = Project(page, request.Projection);
+        var items = new List<IReadOnlyDictionary<string, object?>>(rows.Count);
+        foreach (var row in rows)
+        {
+            var record = new Dictionary<string, object?>(fieldNames.Count, StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < fieldNames.Count; i++)
+                record[fieldNames[i]] = row[i];
+            items.Add(record);
+        }
+
         return new SearchResult<IReadOnlyDictionary<string, object?>>(items, total, request.Page.Number, request.Page.Size);
     }
 
@@ -70,40 +86,40 @@ public sealed class LinqSearchExecutor<TEntity>
         return ordered!;
     }
 
-    private IReadOnlyList<IReadOnlyDictionary<string, object?>> Project(
-        IReadOnlyList<TEntity> items,
-        IReadOnlyList<string> projection)
+    /// <summary>
+    /// Costruisce <c>x =&gt; new object[] { x.A, x.B.C, x.Tags.Select(t =&gt; t.Name).ToList(), ... }</c>
+    /// con i soli campi richiesti (o quelli visibili di default se la proiezione è vuota).
+    /// </summary>
+    private (Expression<Func<TEntity, object[]>> Selector, IReadOnlyList<string> Names) BuildProjection(IReadOnlyList<string> projection)
     {
-        var fieldNames = projection.Count == 0 ? _map.Fields.Keys.ToList() : projection.ToList();
+        var names = projection.Count == 0
+            ? _map.Fields.Values.Where(field => field.VisibleByDefault).Select(field => field.Name).ToList()
+            : projection.ToList();
 
-        var getters = new List<(string Name, Func<TEntity, object?> Getter)>(fieldNames.Count);
-        foreach (var name in fieldNames)
+        var parameter = Expression.Parameter(typeof(TEntity), "x");
+        var elements = new List<Expression>(names.Count);
+
+        foreach (var name in names)
         {
             if (!_map.TryGetField(name, out var field))
                 throw new InvalidOperationException($"Proiezione su campo non mappato '{name}'.");
-            if (field.Selector is null)
-                throw new NotSupportedException($"Il campo dinamico '{name}' non è proiettabile via LINQ.");
-            getters.Add((field.Name, CompileGetter(field.Selector)));
+            var selector = field.Selector
+                ?? throw new NotSupportedException($"Il campo dinamico '{name}' non è proiettabile via LINQ.");
+
+            Expression body = ParameterReplacer.Rebase(selector, parameter);
+
+            // Campo array: materializziamo (EF → subquery; in memoria → ToList). Altrimenti EF non saprebbe
+            // shaparlo dentro l'array e, col vecchio approccio, la navigation restava vuota.
+            if (field.IsArray)
+            {
+                var toList = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!.MakeGenericMethod(field.ClrType);
+                body = Expression.Call(toList, body);
+            }
+
+            elements.Add(Expression.Convert(body, typeof(object)));
         }
 
-        var result = new List<IReadOnlyDictionary<string, object?>>(items.Count);
-        foreach (var item in items)
-        {
-            var row = new Dictionary<string, object?>(getters.Count, StringComparer.OrdinalIgnoreCase);
-            foreach (var (name, getter) in getters)
-                row[name] = getter(item);
-            result.Add(row);
-        }
-
-        return result;
-    }
-
-    private static Func<TEntity, object?> CompileGetter(LambdaExpression selector)
-    {
-        var parameter = selector.Parameters[0];
-        Expression body = selector.Body;
-        if (body.Type.IsValueType)
-            body = Expression.Convert(body, typeof(object));
-        return Expression.Lambda<Func<TEntity, object?>>(body, parameter).Compile();
+        var array = Expression.NewArrayInit(typeof(object), elements);
+        return (Expression.Lambda<Func<TEntity, object[]>>(array, parameter), names);
     }
 }

@@ -1,3 +1,4 @@
+using EphemeralMongo;
 using MongoDB.Bson;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
@@ -189,7 +190,7 @@ Console.WriteLine(efRepo.ToSql(containsPredicate));
 var efRequest = new SearchRequest
 {
     Filter = m2mFilter,
-    Projection = ["name", "price"],
+    Projection = ["name", "price", "tags"],
     Sort = [new SortField("price", SortDirection.Descending)]
 };
 Console.WriteLine();
@@ -202,6 +203,52 @@ Console.WriteLine();
 Console.WriteLine($"Eseguito su SQLite → {efResult.TotalCount} match:");
 foreach (var row in efResult.Items)
     Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
+
+// --- Mongo: la query completa generata dall'executor (filtro + proiezione + sort + paginazione) ---
+Console.WriteLine();
+Console.WriteLine("== MONGO: query generata dall'executor ==");
+var mongoMap = dbMaps.GetEffectiveMap("order", new SearchCaller(spaceA, new HashSet<Guid>()));
+var mongoRequest = new SearchRequest
+{
+    Filter = Filter.And(Filter.In("status", "Paid", "Shipped"), Filter.Eq("deliveryZone", "Nord")),
+    Projection = ["status", "total", "customerEmail", "deliveryZone"],
+    Sort = [new SortField("total", SortDirection.Descending)],
+    Page = new PageRequest(1, 20)
+};
+var mongoPlan = new MongoSearchExecutor<BsonDocument>(mongoMap).BuildPlan(mongoRequest);
+Console.WriteLine("filter:     " + mongoPlan.Filter.ToJson());
+Console.WriteLine("projection: " + mongoPlan.Projection.ToJson());
+Console.WriteLine("sort:       " + (mongoPlan.Sort?.ToJson() ?? "(nessuno)"));
+Console.WriteLine($"skip/limit: {mongoPlan.Skip}/{mongoPlan.Limit}");
+
+// --- Mongo: esecuzione reale su un mongod effimero (documenti schemaless con il bag "attributes") ---
+Console.WriteLine();
+Console.WriteLine("== MONGO: esecuzione reale (mongod effimero) ==");
+try
+{
+    using var runner = MongoRunner.Run();
+    var collection = new MongoDB.Driver.MongoClient(runner.ConnectionString)
+        .GetDatabase("demo")
+        .GetCollection<BsonDocument>("orders");
+
+    collection.InsertMany(
+    [
+        BsonDocument.Parse("""{ "orderNumber": "ORD-1", "status": "Paid",    "totalAmount": { "amount": { "$numberDecimal": "52.50" } },  "customer": { "email": "mario@example.com" }, "attributes": { "deliveryZone": "Nord" } }"""),
+        BsonDocument.Parse("""{ "orderNumber": "ORD-2", "status": "Draft",   "totalAmount": { "amount": { "$numberDecimal": "20.00" } },  "customer": { "email": "lucia@test.it" },     "attributes": { "deliveryZone": "Nord" } }"""),
+        BsonDocument.Parse("""{ "orderNumber": "ORD-3", "status": "Shipped", "totalAmount": { "amount": { "$numberDecimal": "40.00" } },  "customer": { "email": "gino@test.it" },      "attributes": { "deliveryZone": "Sud"  } }"""),
+        BsonDocument.Parse("""{ "orderNumber": "ORD-4", "status": "Paid",    "totalAmount": { "amount": { "$numberDecimal": "120.00" } }, "customer": { "email": "anna@example.com" },  "attributes": { "deliveryZone": "Nord" } }"""),
+    ]);
+
+    var mongoResult = new MongoSearchExecutor<BsonDocument>(mongoMap).Execute(collection, mongoRequest);
+    Console.WriteLine($"Match: {mongoResult.TotalCount}");
+    foreach (var row in mongoResult.Items)
+        Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
+}
+catch (Exception ex)
+{
+    Console.WriteLine("mongod effimero non disponibile in questo ambiente: " + ex.Message);
+    Console.WriteLine("(l'executor resta pronto: Execute(collection, request) su un Mongo reale/Atlas.)");
+}
 
 static string FormatValue(object? value) => value switch
 {

@@ -18,10 +18,25 @@ public sealed class SimulatedFieldDefinitionDatabase : ISearchFieldDefinitionPro
     public SimulatedFieldDefinitionDatabase()
     {
         // === product (store relazionale): Path = property-path CLR ===
+        _rows.Add(new SearchFieldDefinition("product", "sku", FieldKind.String, false, "Sku.Value", Label: "SKU"));
         _rows.Add(new SearchFieldDefinition("product", "name", FieldKind.String, false, "Name"));
+        _rows.Add(new SearchFieldDefinition("product", "description", FieldKind.String, false, "Description"));
+        _rows.Add(new SearchFieldDefinition("product", "brandId", FieldKind.Guid, false, "BrandId", Label: "Marca"));
         _rows.Add(new SearchFieldDefinition("product", "price", FieldKind.Decimal, false, "Price.Amount",
             Label: "Prezzo", Section: "Economici", RequiredPermissionId: SearchPermissions.ViewPrice));
+        _rows.Add(new SearchFieldDefinition("product", "stockQuantity", FieldKind.Integer, false, "StockQuantity",
+            Label: "Quantità in stock", Section: "Economici"));
         _rows.Add(new SearchFieldDefinition("product", "status", FieldKind.Enum, false, "Status"));
+        _rows.Add(new SearchFieldDefinition("product", "category", FieldKind.String, false, "Category"));
+        _rows.Add(new SearchFieldDefinition("product", "weightInGrams", FieldKind.Decimal, false, "WeightInGrams",
+            Label: "Peso (g)", Section: "Fisici"));
+        //LenghtMm
+        _rows.Add(new SearchFieldDefinition("product", "lengthMm", FieldKind.Decimal, false, "Dimensions.LengthMm",
+            Label: "Lunghezza (mm)", Section: "Fisici"));
+        _rows.Add(new SearchFieldDefinition("product", "widthMm", FieldKind.Decimal, false, "Dimensions.WidthMm",
+            Label: "Larghezza (mm)", Section: "Fisici"));
+        _rows.Add(new SearchFieldDefinition("product", "heightMm", FieldKind.Decimal, false, "Dimensions.HeightMm",
+            Label: "Altezza (mm)", Section: "Fisici"));
         // collezione molti-a-molti → il path "Tags.Name" verrà ricostruito in x.Tags.Select(t => t.Name)
         _rows.Add(new SearchFieldDefinition("product", "tags", FieldKind.String, true, "Tags.Name", Label: "Tag"));
         _rows.Add(new SearchFieldDefinition("product", "tagIds", FieldKind.Guid, true, "Tags.Id"));

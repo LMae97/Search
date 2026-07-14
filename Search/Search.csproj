@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Search.Infrastructure.Sql\Search.Infrastructure.Sql.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="EphemeralMongo" Version="3.2.0" />
+  </ItemGroup>
+
 </Project>
