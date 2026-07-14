@@ -89,7 +89,7 @@ var searchEntities = new SearchEntityRegistry(new[]
 {
     SearchEntity.RelationalEF<Product>("product"), // relazionale: il path è una property-path CLR
     SearchEntity.Document("order"),                // documentale: il path è il path del documento Mongo
-    SearchEntity.RelationalRaw<Brand>("brand")     // relazionale
+    SearchEntity.RelationalRaw("brand")            // relazionale grezzo (SQL testuale, nessun tipo CLR)
 });
 var dbMaps = new DbBackedSearchMapProvider(fieldDatabase, new SearchFieldDefinitionResolver(searchEntities));
 
@@ -199,11 +199,8 @@ var efRequest = new SearchRequest
 {
     Filter = m2mFilter,
     Projection = ["name", "price", "tags"],
-    //Sort = [new SortField("price", SortDirection.Descending)]
+    //Sort = [new SortField("price", SortDirection.Descending)] // omesso di proposito → scatta il default sort (id)
 };
-Console.WriteLine();
-Console.WriteLine();
-Console.WriteLine();
 Console.WriteLine();
 var efSanitized = new SearchRequestSanitizer(efMap).Sanitize(efRequest);
 var efResult = new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
@@ -225,8 +222,7 @@ new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
 
 Console.WriteLine();
 Console.WriteLine("== SPLIT QUERY (.AsSplitQuery()): 2 SELECT separati, nessuna duplicazione ==");
-//new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query().AsSplitQuery(), efSanitized);
-new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
+new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query().AsSplitQuery(), efSanitized);
 
 /*
 // --- Mongo: la query completa generata dall'executor (filtro + proiezione + sort + paginazione) ---
@@ -292,7 +288,7 @@ var brandFilter = Filter.And(
     Filter.Contains("code", "acme"),
     Filter.ArrayContainsAny("tags", "sale", "novità"));
 
-var brandSql = new SqlFilterTranslator(brandMap, brandSchema.ArrayFilters).Translate(brandFilter);
+var brandSql = new SqlFilterTranslator(brandMap, brandSchema.ArrayMappings).Translate(brandFilter);
 Console.WriteLine("WHERE " + brandSql.Sql);
 for (var i = 0; i < brandSql.Parameters.Count; i++)
     Console.WriteLine($"   @p{i} = {FormatValue(brandSql.Parameters[i])}");
@@ -330,7 +326,7 @@ using (var rawConnection = new SqliteConnection("DataSource=:memory:"))
     Console.WriteLine(dataQuery.Sql);
     Console.WriteLine();
 
-    var rawExecutor = new RawSqlSearchExecutor();
+    var rawExecutor = new SqlSearchExecutor();
     var total = rawExecutor.Count(rawConnection, brandBuilder.BuildCount(brandSearch));
     var brandRows = rawExecutor.Query(rawConnection, dataQuery);
     Console.WriteLine($"Eseguito su SQLite → {total} match:");

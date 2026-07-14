@@ -13,6 +13,12 @@ namespace Search.Application.Querying.Linq;
 /// in subquery — invece di materializzare l'intera entità e proiettare in memoria (che, sotto EF, non
 /// caricherebbe le navigation e restituirebbe collezioni vuote).
 /// </para>
+/// <para>
+/// <b>Perché sta in Search.Application e non in un progetto Infrastructure</b> (a differenza degli executor
+/// Mongo/SQL-raw): non ha dipendenze native (solo <c>IQueryable</c>/Expression del BCL) ed è l'unico
+/// <b>riusabile in-memory su LINQ-to-Objects</b> (test/liste), non solo su EF. Il criterio è questo — la
+/// riusabilità in-memory — non il semplice "usa solo BCL".
+/// </para>
 /// </summary>
 public sealed class LinqSearchExecutor<TEntity>
 {
@@ -60,10 +66,7 @@ public sealed class LinqSearchExecutor<TEntity>
     private IQueryable<TEntity> ApplySort(IQueryable<TEntity> query, IReadOnlyList<SortField> sorts)
     {
         if (sorts.Count == 0)
-        {
-            query = ApplyDefaultSort(query, isFirst: true);
-            return query;
-        }
+            return ApplyDefaultSort(query, isFirst: true);
 
         IOrderedQueryable<TEntity>? ordered = null;
         for (var i = 0; i < sorts.Count; i++)
@@ -79,49 +82,37 @@ public sealed class LinqSearchExecutor<TEntity>
 
             var selector = field.Selector
                 ?? throw new NotSupportedException($"Ordinamento non supportato sul campo dinamico '{sort.Field}' via LINQ.");
-            var method = typeof(Queryable).GetMethods()
-                .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
-
-            var currentSource = i == 0 ? query : ordered!;
-            ordered = (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { currentSource, selector })!;
+            ordered = ApplyOrder(i == 0 ? query : ordered!, selector, methodName);
         }
 
-        return ApplyDefaultSort(ordered, isFirst: false);
+        // Tiebreak deterministico finale (id/createdAt) sopra i sort espliciti → paginazione stabile.
+        return ApplyDefaultSort(ordered!, isFirst: false);
     }
 
+    // Ordinamento di default per paginazione deterministica: id, poi createdAt (regola in DefaultSortField).
     private IOrderedQueryable<TEntity> ApplyDefaultSort(IQueryable<TEntity> query, bool isFirst)
     {
-        //Se id è presente nella mappa, lo usiamo come ordinamento di default (altrimenti usiamo la data di creazione, altrimenti comunichiamo errore se isFirst è true).
-        //Se TEntity è un AggregateRoot, allora id è sempre presente, altrimenti non possiamo fare assunzioni.
-        if (_map.TryGetField("id", out var idField))
+        var field = _map.DefaultSortField();
+        if (field is null)
         {
-            var selector = idField.Selector
-                ?? throw new NotSupportedException($"Ordinamento non supportato sul campo dinamico 'id' via LINQ.");
-            var methodName = isFirst ? "OrderBy" : "ThenBy";
-            var method = typeof(Queryable).GetMethods()
-                .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
-            return (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { query, selector })!;
-        }
-        else if (_map.TryGetField("createdAt", out var createdAtField))
-        {
-            var selector = createdAtField.Selector
-                ?? throw new NotSupportedException($"Ordinamento non supportato sul campo dinamico 'createdAt' via LINQ.");
-            var methodName = isFirst ? "OrderBy" : "ThenBy";
-            var method = typeof(Queryable).GetMethods()
-                .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
-            return (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { query, selector })!;
-        }
-        else if (isFirst)
-        {
-            throw new InvalidOperationException("Nessun ordinamento specificato e nessun ordinamento di default disponibile (né 'Id' né 'CreatedAt').");
-        }
-        else
-        {
+            if (isFirst)
+                throw new InvalidOperationException("Nessun ordinamento specificato e nessun default disponibile (né 'id' né 'createdAt').");
             return (IOrderedQueryable<TEntity>)query;
         }
+
+        var selector = field.Selector
+            ?? throw new NotSupportedException($"Ordinamento di default non supportato sul campo dinamico '{field.Name}' via LINQ.");
+        return ApplyOrder(query, selector, isFirst ? "OrderBy" : "ThenBy");
+    }
+
+    // Applica OrderBy/OrderByDescending/ThenBy/ThenByDescending via reflection (unico modo generico su un
+    // selettore il cui tipo di ritorno non è noto a compile-time). Un solo punto per tutti e tre i siti di sort.
+    private static IOrderedQueryable<TEntity> ApplyOrder(IQueryable<TEntity> source, LambdaExpression selector, string methodName)
+    {
+        var method = typeof(Queryable).GetMethods()
+            .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
+            .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
+        return (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { source, selector })!;
     }
 
     /// <summary>
@@ -130,9 +121,7 @@ public sealed class LinqSearchExecutor<TEntity>
     /// </summary>
     private (Expression<Func<TEntity, object[]>> Selector, IReadOnlyList<string> Names) BuildProjection(IReadOnlyList<string> projection)
     {
-        var names = projection.Count == 0
-            ? _map.Fields.Values.Where(field => field.VisibleByDefault).Select(field => field.Name).ToList()
-            : projection.ToList();
+        var names = projection.Count == 0 ? _map.DefaultProjection() : projection.ToList();
 
         var parameter = Expression.Parameter(typeof(TEntity), "x");
         var elements = new List<Expression>(names.Count);

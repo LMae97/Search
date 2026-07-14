@@ -18,15 +18,15 @@ namespace Search.Infrastructure.Sql;
 public sealed class SqlFilterTranslator
 {
     private readonly IEntitySearchMap _map;
-    private readonly IReadOnlyDictionary<string, SqlArrayFilter> _arrayFilters;
+    private readonly IReadOnlyDictionary<string, SqlArrayMapping> _arrayMappings;
 
     /// <param name="map">Mappa effettiva dei campi (già filtrata per permessi/tenant).</param>
-    /// <param name="arrayFilters">
-    /// </param>
-    public SqlFilterTranslator(IEntitySearchMap map, IReadOnlyDictionary<string, SqlArrayFilter>? arrayFilters = null)
+    /// <param name="arrayMappings">Mappatura per-campo delle collezioni (M2M o JSON) → come diventano un EXISTS
+    /// correlato; dalla config SQL dell'entità. Null = l'entità non ha campi array ricercabili.</param>
+    public SqlFilterTranslator(IEntitySearchMap map, IReadOnlyDictionary<string, SqlArrayMapping>? arrayMappings = null)
     {
         _map = map;
-        _arrayFilters = arrayFilters ?? new Dictionary<string, SqlArrayFilter>();
+        _arrayMappings = arrayMappings ?? new Dictionary<string, SqlArrayMapping>();
     }
 
     /// <summary>Albero → clausola SQL + valori parametrizzati.</summary>
@@ -71,7 +71,7 @@ public sealed class SqlFilterTranslator
 
     private string BuildScalar(ComparisonFilterNode node, FieldDescriptor field, List<object?> parameters)
     {
-        var column = SqlColumn(field);
+        var column = field.SqlColumn();
 
         return node.Operator switch
         {
@@ -109,9 +109,9 @@ public sealed class SqlFilterTranslator
 
     private string BuildArray(ComparisonFilterNode node, FieldDescriptor field, List<object?> parameters)
     {
-        if (!_arrayFilters.TryGetValue(field.Name, out var join))
+        if (!_arrayMappings.TryGetValue(field.Name, out var join))
             throw new NotSupportedException(
-                $"Il campo array '{field.Name}' non ha una mappatura di join SQL: va definita nell'adapter (SqlArrayFilter).");
+                $"Il campo array '{field.Name}' non ha una mappatura di join SQL: va definita nell'adapter (SqlArrayMapping).");
 
         // Corpo comune "SELECT 1 <FROM/JOIN + correlazione col padre>"; il predicato sull'elemento è opzionale.
         string Exists(string? elementPredicate) => elementPredicate is null
@@ -131,10 +131,6 @@ public sealed class SqlFilterTranslator
                 $"Operatore '{node.Operator}' non supportato per il campo array '{field.Name}'.")
         };
     }
-
-    private static string SqlColumn(FieldDescriptor field) =>
-        field.StoragePath
-        ?? throw new NotSupportedException($"Il campo '{field.Name}' non ha una colonna SQL (StoragePath).");
 
     // --- Parametri: i valori utente non si interpolano mai. Nome posizionale @p0, @p1, … -----------
 
@@ -176,4 +172,4 @@ public sealed record SqlFilter(string Sql, IReadOnlyList<object?> Parameters);
 /// Come proiettare l'intero array nel <c>SELECT</c>. <c>null</c> ⇒ lo si RICOSTRUISCE con <c>json_group_array(ElementColumn)</c>
 /// sullo stesso join (caso M2M). Valorizzato ⇒ espressione diretta (es. <c>"brand"."Data" -> 'tags'</c>: la colonna JSON È già l'array).
 /// </param>
-public sealed record SqlArrayFilter(string From, string ElementColumn, string? Projection = null);
+public sealed record SqlArrayMapping(string From, string ElementColumn, string? Projection = null);

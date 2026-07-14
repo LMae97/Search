@@ -6,11 +6,6 @@ namespace Search.Application.Querying.Authorization;
 /// <summary>
 /// Adatta una richiesta alla mappa effettiva dell'utente <b>rimuovendo</b> (non rifiutando) i
 /// riferimenti a campi non presenti: filtro, ordinamento e proiezione vengono "potati".
-/// <para>
-/// Attenzione alla semantica del filtro: togliere una clausola da un AND <b>allarga</b> i
-/// risultati, da un OR li <b>restringe</b>; un NOT che perde il figlio sparisce; un AND/OR
-/// che resta senza figli sparisce (⇒ matcha tutto). Nessun dato del campo viene rivelato.
-/// </para>
 /// La validazione "dura" (arità, operatore incompatibile) resta al <c>SearchRequestValidator</c>,
 /// che gira dopo questa potatura sui soli campi rimasti.
 /// </summary>
@@ -24,13 +19,8 @@ public sealed class SearchRequestSanitizer
     {
         var projection = request.Projection.Where(IsKnown).ToList();
         if (projection.Count == 0)
-        {
-            // Proiezione vuota (o interamente potata) ⇒ i campi visibili di default.
-            projection = _map.Fields.Values
-                .Where(field => field.VisibleByDefault)
-                .Select(field => field.Name)
-                .ToList();
-        }
+            // Proiezione vuota (o interamente potata) ⇒ i campi visibili di default (regola condivisa).
+            projection = _map.DefaultProjection().ToList();
 
         return new SearchRequest
         {

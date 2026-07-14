@@ -4,11 +4,14 @@ namespace Search.Application.Querying.Dynamic;
 
 /// <summary>
 /// Trasforma una <see cref="SearchFieldDefinition"/> in un <see cref="FieldDescriptor"/> eseguibile,
-/// interpretando il <see cref="SearchFieldDefinition.Path"/> in base allo store dell'entità:
+/// interpretando il <see cref="SearchFieldDefinition.Path"/> secondo il criterio effettivo di binding
+/// (che <b>non</b> coincide con relazionale-vs-documentale):
 /// <list type="bullet">
-/// <item><b>Relazionale</b>: il path CLR viene ricostruito in un selettore (Expression) — tipo/operatori
-/// derivati dal tipo reale della proprietà (più robusto della colonna Kind).</item>
-/// <item><b>Documentale</b>: il path diventa <see cref="FieldDescriptor.StoragePath"/> — nessun selettore.</item>
+/// <item><b>Basato su selettore</b> (solo <see cref="StoreKind.PostgresEF"/>): il path CLR viene ricostruito
+/// in un selettore (Expression) — tipo/operatori derivati dal tipo reale della proprietà.</item>
+/// <item><b>Basato su storage path</b> (<see cref="StoreKind.PostgresRaw"/> ed <see cref="StoreKind.Mongo"/>):
+/// il path diventa <see cref="FieldDescriptor.StoragePath"/> — nessun selettore CLR. Per il Raw è
+/// un'espressione-colonna SQL, per Mongo il path del documento.</item>
 /// </list>
 /// </summary>
 public sealed class SearchFieldDefinitionResolver
@@ -22,11 +25,11 @@ public sealed class SearchFieldDefinitionResolver
         var entity = _entities.Get(definition.EntityName);
 
         return entity.Store == StoreKind.PostgresEF
-            ? ResolveRelational(definition, entity)
-            : ResolveDocument(definition);
+            ? ResolveSelectorBased(definition, entity)
+            : ResolveStoragePathBased(definition);
     }
 
-    private static FieldDescriptor ResolveRelational(SearchFieldDefinition definition, SearchEntity entity)
+    private static FieldDescriptor ResolveSelectorBased(SearchFieldDefinition definition, SearchEntity entity)
     {
         var entityType = entity.ClrType
             ?? throw new InvalidOperationException($"L'entità relazionale '{entity.Name}' non ha un tipo CLR.");
@@ -53,7 +56,8 @@ public sealed class SearchFieldDefinitionResolver
         };
     }
 
-    private static FieldDescriptor ResolveDocument(SearchFieldDefinition definition)
+    // Copre sia Mongo sia PostgresRaw: il campo porta un path esplicito (StoragePath), non un selettore CLR.
+    private static FieldDescriptor ResolveStoragePathBased(SearchFieldDefinition definition)
     {
         // Nessun tipo CLR reale: usiamo la Kind dichiarata (solo per la coercizione dei valori del filtro).
         var clrType = ClrTypeFor(definition.Kind);

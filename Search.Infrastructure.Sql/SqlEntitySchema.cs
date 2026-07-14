@@ -13,11 +13,11 @@ namespace Search.Infrastructure.Sql;
 public sealed record SqlEntitySchema(string From, string? BasePredicate = null)
 {
     /// <summary>
-    /// Per i campi array/collezione: come diventano EXISTS/aggregazioni correlati (vedi <see cref="SqlArrayFilter"/>),
+    /// Per i campi array/collezione: come diventano EXISTS/aggregazioni correlati (vedi <see cref="SqlArrayMapping"/>),
     /// per nome-campo pubblico. Vuoto se l'entità non ha collezioni ricercabili.
     /// </summary>
-    public IReadOnlyDictionary<string, SqlArrayFilter> ArrayFilters { get; init; }
-        = new Dictionary<string, SqlArrayFilter>();
+    public IReadOnlyDictionary<string, SqlArrayMapping> ArrayMappings { get; init; }
+        = new Dictionary<string, SqlArrayMapping>();
 }
 
 /// <summary>

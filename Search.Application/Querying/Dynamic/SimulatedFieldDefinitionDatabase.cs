@@ -31,7 +31,7 @@ public sealed class SimulatedFieldDefinitionDatabase : ISearchFieldDefinitionPro
         _rows.Add(new SearchFieldDefinition("product", "category", FieldKind.String, false, "Category"));
         _rows.Add(new SearchFieldDefinition("product", "weightInGrams", FieldKind.Decimal, false, "WeightInGrams",
             Label: "Peso (g)", Section: "Fisici"));
-        //LenghtMm
+        // dimensioni fisiche (value object Dimensions)
         _rows.Add(new SearchFieldDefinition("product", "lengthMm", FieldKind.Decimal, false, "Dimensions.LengthMm",
             Label: "Lunghezza (mm)", Section: "Fisici"));
         _rows.Add(new SearchFieldDefinition("product", "widthMm", FieldKind.Decimal, false, "Dimensions.WidthMm",

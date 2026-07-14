@@ -61,9 +61,7 @@ public sealed class MongoSearchExecutor<TDocument>
 
     private (BsonDocument Projection, IReadOnlyList<(string Name, string Path)> Fields) BuildProjection(IReadOnlyList<string> projection)
     {
-        var names = projection.Count == 0
-            ? _map.Fields.Values.Where(field => field.VisibleByDefault).Select(field => field.Name)
-            : projection;
+        var names = projection.Count == 0 ? _map.DefaultProjection() : projection;
 
         var document = new BsonDocument();
         var fields = new List<(string Name, string Path)>();
@@ -85,7 +83,11 @@ public sealed class MongoSearchExecutor<TDocument>
     private BsonDocument? BuildSort(IReadOnlyList<SortField> sorts)
     {
         if (sorts.Count == 0)
-            return null;
+        {
+            // Nessun sort esplicito → default deterministico (id/createdAt) se l'entità ce l'ha, come gli altri store.
+            var def = _map.DefaultSortField();
+            return def is null ? null : new BsonDocument { [PathOf(def.Name)] = 1 };
+        }
 
         var document = new BsonDocument();
         foreach (var sort in sorts)
