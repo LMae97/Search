@@ -12,7 +12,6 @@ using Search.Domain.Common.ValueObjects;
 using Search.Domain.Ordering.Orders;
 using Search.Domain.Ordering.Orders.ValueObjects;
 using Search.Infrastructure.Mongo;
-using Search.Simulation;
 
 // ===========================================================================================
 // Dati in memoria. In produzione: IQueryable<Product> (EF Core / Postgres) e

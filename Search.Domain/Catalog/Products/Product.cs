@@ -57,16 +57,21 @@ public sealed class Product : AggregateRoot<Guid>
         Guid brandId,
         Money price,
         string? description = null,
-        string? category = null)
+        string? category = null,
+        Dimensions? dimensions = null,
+        decimal? weightInGrams = null)
     {
         ArgumentNullException.ThrowIfNull(sku);
         ArgumentNullException.ThrowIfNull(price);
         DomainGuard.Against(brandId == Guid.Empty, "Un prodotto deve appartenere a una marca.");
+        DomainGuard.Against(weightInGrams is < 0, "Il peso non può essere negativo.");
 
         return new Product(Guid.NewGuid(), sku, NormalizeName(name), brandId, price)
         {
             Description = description?.Trim(),
-            Category = category?.Trim()
+            Category = category?.Trim(),
+            Dimensions = dimensions,
+            WeightInGrams = weightInGrams
         };
     }
 

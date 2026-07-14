@@ -1,0 +1,108 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### Elenco prodotti  →  [{ id, code, label }]
+GET {{baseUrl}}/products
+
+### Crea prodotto (con dimensioni e tag)
+# @name create
+POST {{baseUrl}}/products
+Content-Type: {{contentType}}
+
+{
+  "sku": "api-sku-1",
+  "name": "Prodotto API",
+  "brandId": "11111111-1111-1111-1111-111111111111",
+  "price": 29.90,
+  "currency": "EUR",
+  "description": "creato via API",
+  "category": "demo",
+  "dimensions": { "lengthMm": 100, "widthMm": 50, "heightMm": 20 },
+  "weightInGrams": 250,
+  "tags": ["nuovo", "api"]
+}
+
+### (l'id del prodotto creato viene preso dalla risposta della chiamata "create")
+#@productId = {{create.response.body.$.id}}
+
+@productId = 70473618-e2ba-4648-8bef-c84fdd29b53e
+
+### Dettaglio prodotto  →  tutto: stato + audit + soft-delete
+GET {{baseUrl}}/products/{{productId}}
+
+### Aggiorna info generiche (PUT = sostituzione: i campi omessi vengono azzerati)
+PUT {{baseUrl}}/products/{{productId}}/details
+Content-Type: {{contentType}}
+
+{
+  "name": "Prodotto API v2",
+  "price": 24.90,
+  "currency": "EUR",
+  "description": "aggiornato",
+  "category": "demo",
+  "dimensions": { "lengthMm": 110, "widthMm": 55, "heightMm": 22 },
+  "weightInGrams": 260
+}
+
+### Cambia stato: pubblica (Draft → Active/OutOfStock secondo la giacenza)
+POST {{baseUrl}}/products/{{productId}}/status
+Content-Type: {{contentType}}
+
+{ "action": "Publish" }
+
+### Cambia stato: fuori produzione
+POST {{baseUrl}}/products/{{productId}}/status
+Content-Type: {{contentType}}
+
+{ "action": "Discontinue" }
+
+### Ricerca: price >= 10 AND tags ⊇ {sale|novità}, ordinati per prezzo desc
+POST {{baseUrl}}/products/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "price", "op": "gte", "value": 10 },
+      { "field": "tags", "op": "containsAny", "values": ["sale", "novità"] }
+    ]
+  },
+  "projection": ["name", "price", "tags"],
+  "sort": [{ "field": "price", "direction": "Descending" }],
+  "page": { "number": 1, "size": 20 }
+}
+
+### Ricerca: filtro annidato con OR e NOT
+POST {{baseUrl}}/products/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "price", "op": "gte", "value": 10 },
+      { "or": [
+        { "field": "tags", "op": "containsAny", "values": ["sale"] },
+        { "not": { "field": "status", "op": "eq", "value": "Discontinued" } }
+      ] }
+    ]
+  },
+  "projection": ["name", "price", "status", "tags"]
+}
+
+### Ricerca: contains su name
+POST {{baseUrl}}/products/search
+Content-Type: {{contentType}}
+
+{
+  "filter": { "field": "name", "op": "contains", "value": "Widget" },
+  "projection": ["name", "price"]
+}
+
+### Errore atteso: operatore incoerente col tipo del campo  →  422
+POST {{baseUrl}}/products/search
+Content-Type: {{contentType}}
+
+{ "filter": { "field": "price", "op": "contains", "value": "10" } }
+
+### Errore atteso: prodotto inesistente  →  404
+GET {{baseUrl}}/products/00000000-0000-0000-0000-000000000000
