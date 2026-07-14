@@ -4,8 +4,8 @@ namespace Search.Application.Querying.Dynamic;
 public enum StoreKind
 {
     /// <summary>Relazionale (EF/Postgres): il path è una property-path CLR, ricostruita in Expression.</summary>
-    Relational,
+    Postgres,
 
     /// <summary>Documentale (Mongo): il path è il path del documento, usato così com'è.</summary>
-    Document
+    Mongo
 }

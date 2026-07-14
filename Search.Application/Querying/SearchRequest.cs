@@ -2,6 +2,21 @@ using Search.Application.Querying.Filters;
 
 namespace Search.Application.Querying;
 
+/** Esempio di richiesta:
+ * {
+ *   "filter": {
+ *     "and": [
+ *       { "field": "price", "op": "gte", "value": 10 },
+ *       { "or": [
+ *         { "field": "tags", "op": "containsAny", "values": ["sale"] },
+ *         { "not": { "field": "status", "op": "eq", "value": "Discontinued" } }
+ *       ] }
+ *     ]
+ *   },
+ *   "projection": ["name", "price", "status", "tags"]
+ * }
+ */
+
 /// <summary>
 /// Richiesta di ricerca completa: filtro + proiezione + ordinamento + paginazione.
 /// È il contratto unico che vale per ogni entità e per entrambi gli store.

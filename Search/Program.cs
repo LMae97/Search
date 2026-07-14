@@ -12,6 +12,7 @@ using Search.Domain.Common.ValueObjects;
 using Search.Domain.Ordering.Orders;
 using Search.Domain.Ordering.Orders.ValueObjects;
 using Search.Infrastructure.Mongo;
+using Search.Infrastructure.Sql;
 
 // ===========================================================================================
 // Dati in memoria. In produzione: IQueryable<Product> (EF Core / Postgres) e
@@ -132,6 +133,75 @@ void RunOrderMongo(string who, SearchCaller caller)
 
 RunOrderMongo("Tenant con deliveryZone", new SearchCaller(spaceA, new HashSet<Guid>()));
 RunOrderMongo("Altro tenant (senza)", new SearchCaller(Guid.NewGuid(), new HashSet<Guid>()));
+
+// --- Case-insensitivity del contains (coerente con Mongo) ---
+Console.WriteLine();
+Console.WriteLine("== CASE-INSENSITIVITY (contains) ==");
+var ciMap = dbMaps.GetEffectiveMap("product", new SearchCaller(spaceA, new HashSet<Guid>()));
+foreach (var term in new[] { "widget", "WIDGET", "WiDgEt" })
+{
+    var request = new SearchRequest { Filter = Filter.Contains("name", term), Projection = ["name"] };
+    var sanitized = new SearchRequestSanitizer(ciMap).Sanitize(request);
+    var result = new LinqSearchExecutor<Product>(ciMap).Execute(products.AsQueryable(), sanitized);
+    var names = string.Join(", ", result.Items.Select(r => r["name"]));
+    Console.WriteLine($"   name contains \"{term}\" → {result.TotalCount} match: {names}");
+}
+
+// --- Spike EF Core / SQLite: lo stesso motore su un DB reale → SQL generato ---
+Console.WriteLine();
+Console.WriteLine("== EF CORE / SQLITE: SQL generato dal motore ==");
+
+using var db = SqliteCatalog.CreateInMemory();
+var efRepo = new EfProductRepository(db);
+
+var efBrandId = Guid.NewGuid();
+void SeedEf(string sku, string name, decimal price, ProductStatus status, params string[] tags)
+{
+    var p = Product.Create(Sku.Create(sku), name, efBrandId, Money.Of(price, "EUR"));
+    foreach (var t in tags)
+        p.AddTag(Tag.Create(t));
+    p.AddStock(10);
+    p.Publish();
+    if (status == ProductStatus.OutOfStock) p.RemoveStock(10);
+    else if (status == ProductStatus.Discontinued) p.Discontinue();
+    p.ApplyCreationAudit("seed@we-byte.it", DateTimeOffset.UtcNow);
+    efRepo.Add(p);
+}
+SeedEf("WIDGET-PRO", "Widget Pro", 17.50m, ProductStatus.Active, "novità");
+SeedEf("GADGET", "Gadget", 5.00m, ProductStatus.Active, "sale");
+SeedEf("BUNDLE", "Bundle", 49.90m, ProductStatus.OutOfStock, "sale", "novità");
+
+var efMap = dbMaps.GetEffectiveMap("product", new SearchCaller(spaceA, new HashSet<Guid> { SearchPermissions.ViewPrice }));
+
+// (1) M2M: price >= 10 AND tags ⊇ {sale, novità} → subquery EXISTS sulla giunzione
+var m2mFilter = Filter.And(Filter.Gte("price", 10), Filter.ArrayContainsAny("tags", "sale", "novità"));
+var m2mPredicate = new LinqFilterTranslator<Product>(efMap).Translate(m2mFilter);
+Console.WriteLine("SQL per  price>=10 AND tags ⊇ {sale,novità}:");
+Console.WriteLine(efRepo.ToSql(m2mPredicate));
+
+// (2) contains case-insensitive → LOWER(...) LIKE
+var containsPredicate = new LinqFilterTranslator<Product>(efMap).Translate(Filter.Contains("name", "widget"));
+Console.WriteLine();
+Console.WriteLine("SQL per  name contains \"widget\" (case-insensitive):");
+Console.WriteLine(efRepo.ToSql(containsPredicate));
+
+// (3) esecuzione reale su SQLite tramite il motore
+var efRequest = new SearchRequest
+{
+    Filter = m2mFilter,
+    Projection = ["name", "price"],
+    Sort = [new SortField("price", SortDirection.Descending)]
+};
+Console.WriteLine();
+Console.WriteLine();
+Console.WriteLine();
+Console.WriteLine();
+var efSanitized = new SearchRequestSanitizer(efMap).Sanitize(efRequest);
+var efResult = new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
+Console.WriteLine();
+Console.WriteLine($"Eseguito su SQLite → {efResult.TotalCount} match:");
+foreach (var row in efResult.Items)
+    Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
 
 static string FormatValue(object? value) => value switch
 {

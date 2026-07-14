@@ -134,10 +134,14 @@ public sealed class LinqFilterTranslator<TEntity>
 
     private static Expression StringCall(Expression member, MethodInfo method, object? value)
     {
-        var argument = Expression.Constant(value?.ToString() ?? string.Empty, typeof(string));
+        // Case-insensitive, coerente con Mongo (regex "i"): abbassiamo entrambi i lati.
+        // Usiamo ToLower() (che EF traduce in LOWER(...)) e non StringComparison, che EF NON traduce.
+        // (Nota: LOWER lato DB dipende dalla collation; per termini ASCII è equivalente all'invariant.)
+        var argument = Expression.Constant(value?.ToString()?.ToLowerInvariant() ?? string.Empty, typeof(string));
         // Protegge da NullReferenceException quando la stringa è null (es. Description nullable).
         var notNull = Expression.NotEqual(member, Expression.Constant(null, member.Type));
-        return Expression.AndAlso(notNull, Expression.Call(member, method, argument));
+        var memberLowered = Expression.Call(member, StringToLower);
+        return Expression.AndAlso(notNull, Expression.Call(memberLowered, method, argument));
     }
 
     private static Expression BuildIn(Expression member, FieldDescriptor field, IReadOnlyList<object?> values, bool negate)
@@ -209,6 +213,9 @@ public sealed class LinqFilterTranslator<TEntity>
             list.Add(ValueCoercion.Coerce(value, coerceTo));
         return list;
     }
+
+    private static readonly MethodInfo StringToLower =
+        typeof(string).GetMethod(nameof(string.ToLower), Type.EmptyTypes)!;
 
     private static readonly MethodInfo StringContains =
         typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) })!;

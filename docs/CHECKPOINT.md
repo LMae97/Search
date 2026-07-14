@@ -66,6 +66,9 @@ In `Search.Application/Querying/Dynamic` + `Querying/Metadata/MaterializedSearch
 - Demo: tenant con `deliveryZone` → query `{... "attributes.deliveryZone": "Nord"}`; altro tenant → campo assente, potato.
 - **NB:** questi file dynamic-only sono stati poi **consolidati** nel sistema unificato data-driven (vedi "Campi a DB"): concetti invariati, `DynamicFieldDefinition`→`SearchFieldDefinition`, `SearchMapProvider`→`DbBackedSearchMapProvider`.
 
+## EF Core / SQLite — spike SQL ✅ (fatto e verificato)
+Progetto `Search.Infrastructure.Sql` (EFCore.Sqlite 10.0.9): `CatalogDbContext` (Product + Tag), `EfProductRepository` (+`ToSql` via `ToQueryString`), factory `SqliteCatalog.CreateInMemory()`. Mapping dominio ricco: `Sku` via converter, `Money`/`Dimensions` owned, `Status` enum→stringa, **Tags M2M skip navigation** (`HasMany().WithMany()`), **soft-delete** query filter globale, `DomainEvents`/`Barcodes` ignorati. Lo **stesso motore** (definizioni DB → Expression) gira su `IQueryable` EF → SQL reale: il filtro M2M diventa **`EXISTS`** sulla giunzione (niente moltiplicazione righe), il `contains` diventa `lower(...)`, soft-delete applicato. Passaggio a **Postgres = una riga** (`UseSqlite`→`UseNpgsql`). NB: warning NuGet NU1903 su `SQLitePCLRaw` (dep transitiva SQLite) — sparisce con Npgsql. Spike guidato dal console `Search`.
+
 ## Campi a DB (fase decisa 2026-07-13)
 Obiettivo: le definizioni dei campi (statici + dinamici) vivono a DB, come nel vecchio progetto (`SearchField`).
 Nodo tecnico centrale: **il binding non si serializza** (non puoi salvare una lambda). Risoluzioni:
@@ -106,7 +109,7 @@ Prossimo: (e) **scoping dati per `spaceId`** sui risultati; auth reale → calle
 
 **Nota di design — ricerca/proiezione su campo di un altro aggregato (es. `brandName`).** Non serve per forza una navigation property. 4 opzioni: (A) navigation `Product.Brand` (join to-one, sicuro come cardinalità, ma rompe il confine d'aggregato; solo Postgres); (B) snapshot denormalizzato `Product.BrandName` (nessun join, da sincronizzare su rename via evento — coerente con `CustomerInfo` sull'ordine); (C) read model `ProductSearchView` (brandName colonna piatta, write model puro); (D) resolve-by-id (nome→id→`brandId IN (...)` + stitch). Raccomandazione: se la ricerca è read-model → C/B; navigation solo come concessione pragmatica per la lettura. Decisione rimandata (tenuta come nota).
 
-Aperti da discutere: layer DTO/JSON (deserializzazione polimorfica `System.Text.Json`), **case-insensitivity** su Postgres (`ILIKE`/`citext`) coerente con Mongo, campi array di sotto-documenti (`lines.sku`), test d'integrazione su Mongo reale.
+Aperti da discutere: layer DTO/JSON ✅ (fatto: `FilterNodeJsonConverter` nell'API), **case-insensitivity** ✅ (fatto: `Contains`/`NotContains`/`StartsWith`/`EndsWith` case-insensitive — LINQ `LOWER()` su entrambi i lati traducibile da EF, Mongo regex `i`; `Equals`/`In` restano case-sensitive), campi array di sotto-documenti (`lines.sku`) — aperto, test d'integrazione su Mongo/EF reali — aperto.
 
 ## Note / preferenze
 - Focus dichiarato: **leggibilità e manutenibilità**.

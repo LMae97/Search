@@ -21,7 +21,7 @@ public sealed class SearchFieldDefinitionResolver
     {
         var entity = _entities.Get(definition.EntityName);
 
-        return entity.Store == StoreKind.Relational
+        return entity.Store == StoreKind.Postgres
             ? ResolveRelational(definition, entity)
             : ResolveDocument(definition);
     }
