@@ -1,4 +1,5 @@
 using EphemeralMongo;
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
@@ -191,7 +192,7 @@ var efRequest = new SearchRequest
 {
     Filter = m2mFilter,
     Projection = ["name", "price", "tags"],
-    Sort = [new SortField("price", SortDirection.Descending)]
+    //Sort = [new SortField("price", SortDirection.Descending)]
 };
 Console.WriteLine();
 Console.WriteLine();
@@ -204,6 +205,22 @@ Console.WriteLine($"Eseguito su SQLite → {efResult.TotalCount} match:");
 foreach (var row in efResult.Items)
     Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
 
+// (4) SINGLE QUERY vs SPLIT QUERY per la collezione proiettata (tags).
+//     Stessa identica richiesta: cambia solo COME EF materializza la collezione.
+//     - default (single): UN solo SELECT con JOIN → le colonne radice sono duplicate per ogni tag.
+//     - .AsSplitQuery():   DUE SELECT (radici + tag correlati per chiave) → nessuna duplicazione.
+//     Nota di design: .AsSplitQuery() è specifico di EF Core e il flag PROPAGA lungo la catena, quindi
+//     lo applichiamo qui sull'IQueryable (adapter SQL) — l'executor in Search.Application resta puro e
+//     gira anche in memoria. In produzione vive nel repo/DbContext, mai nel motore store-agnostic.
+Console.WriteLine();
+Console.WriteLine("== SINGLE QUERY (default): 1 SELECT con JOIN, righe radice duplicate per ogni tag ==");
+new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
+
+Console.WriteLine();
+Console.WriteLine("== SPLIT QUERY (.AsSplitQuery()): 2 SELECT separati, nessuna duplicazione ==");
+new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query().AsSplitQuery(), efSanitized);
+
+/*
 // --- Mongo: la query completa generata dall'executor (filtro + proiezione + sort + paginazione) ---
 Console.WriteLine();
 Console.WriteLine("== MONGO: query generata dall'executor ==");
@@ -215,6 +232,7 @@ var mongoRequest = new SearchRequest
     Sort = [new SortField("total", SortDirection.Descending)],
     Page = new PageRequest(1, 20)
 };
+
 var mongoPlan = new MongoSearchExecutor<BsonDocument>(mongoMap).BuildPlan(mongoRequest);
 Console.WriteLine("filter:     " + mongoPlan.Filter.ToJson());
 Console.WriteLine("projection: " + mongoPlan.Projection.ToJson());
@@ -249,6 +267,7 @@ catch (Exception ex)
     Console.WriteLine("mongod effimero non disponibile in questo ambiente: " + ex.Message);
     Console.WriteLine("(l'executor resta pronto: Execute(collection, request) su un Mongo reale/Atlas.)");
 }
+*/
 
 static string FormatValue(object? value) => value switch
 {

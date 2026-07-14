@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Search.Application.Querying.Metadata;
+using Search.Domain.Common;
 
 namespace Search.Application.Querying.Linq;
 
@@ -59,7 +60,10 @@ public sealed class LinqSearchExecutor<TEntity>
     private IQueryable<TEntity> ApplySort(IQueryable<TEntity> query, IReadOnlyList<SortField> sorts)
     {
         if (sorts.Count == 0)
+        {
+            query = ApplyDefaultSort(query, isFirst: true);
             return query;
+        }
 
         IOrderedQueryable<TEntity>? ordered = null;
         for (var i = 0; i < sorts.Count; i++)
@@ -83,7 +87,41 @@ public sealed class LinqSearchExecutor<TEntity>
             ordered = (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { currentSource, selector })!;
         }
 
-        return ordered!;
+        return ApplyDefaultSort(ordered, isFirst: false);
+    }
+
+    private IOrderedQueryable<TEntity> ApplyDefaultSort(IQueryable<TEntity> query, bool isFirst)
+    {
+        //Se id è presente nella mappa, lo usiamo come ordinamento di default (altrimenti usiamo la data di creazione, altrimenti comunichiamo errore se isFirst è true).
+        //Se TEntity è un AggregateRoot, allora id è sempre presente, altrimenti non possiamo fare assunzioni.
+        if (_map.TryGetField("id", out var idField))
+        {
+            var selector = idField.Selector
+                ?? throw new NotSupportedException($"Ordinamento non supportato sul campo dinamico 'id' via LINQ.");
+            var methodName = isFirst ? "OrderBy" : "ThenBy";
+            var method = typeof(Queryable).GetMethods()
+                .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
+                .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
+            return (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { query, selector })!;
+        }
+        else if (_map.TryGetField("createdAt", out var createdAtField))
+        {
+            var selector = createdAtField.Selector
+                ?? throw new NotSupportedException($"Ordinamento non supportato sul campo dinamico 'createdAt' via LINQ.");
+            var methodName = isFirst ? "OrderBy" : "ThenBy";
+            var method = typeof(Queryable).GetMethods()
+                .Single(m => m.Name == methodName && m.GetParameters().Length == 2)
+                .MakeGenericMethod(typeof(TEntity), selector.ReturnType);
+            return (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { query, selector })!;
+        }
+        else if (isFirst)
+        {
+            throw new InvalidOperationException("Nessun ordinamento specificato e nessun ordinamento di default disponibile (né 'Id' né 'CreatedAt').");
+        }
+        else
+        {
+            return (IOrderedQueryable<TEntity>)query;
+        }
     }
 
     /// <summary>

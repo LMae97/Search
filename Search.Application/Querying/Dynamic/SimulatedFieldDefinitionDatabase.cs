@@ -18,6 +18,7 @@ public sealed class SimulatedFieldDefinitionDatabase : ISearchFieldDefinitionPro
     public SimulatedFieldDefinitionDatabase()
     {
         // === product (store relazionale): Path = property-path CLR ===
+        _rows.Add(new SearchFieldDefinition("product", "id", FieldKind.Guid, false, "Id"));
         _rows.Add(new SearchFieldDefinition("product", "sku", FieldKind.String, false, "Sku.Value", Label: "SKU"));
         _rows.Add(new SearchFieldDefinition("product", "name", FieldKind.String, false, "Name"));
         _rows.Add(new SearchFieldDefinition("product", "description", FieldKind.String, false, "Description"));
