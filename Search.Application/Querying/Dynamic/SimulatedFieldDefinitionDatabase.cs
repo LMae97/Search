@@ -59,6 +59,15 @@ public sealed class SimulatedFieldDefinitionDatabase : ISearchFieldDefinitionPro
         _rows.Add(new SearchFieldDefinition("brand", "logoUrl", FieldKind.String, false, "\"brand\".\"LogoUrl\""));
         _rows.Add(new SearchFieldDefinition("brand", "tags", FieldKind.String, true, "\"tag\".\"Name\"", Label: "Tag"));
         _rows.Add(new SearchFieldDefinition("brand", "tagIds", FieldKind.Guid, true, "\"tag\".\"Id\""));
+
+        // === brand: campi su una colonna JSONB "Data" (Postgres). Scalare via estrazione (#>>, col cast se
+        // tipizzato); array via il path dell'array (l'unnest per il filtro sta nella config SQL, non qui). ===
+        _rows.Add(new SearchFieldDefinition("brand", "dataCity", FieldKind.String, false,
+            "\"brand\".\"Data\" #>> '{address,city}'", Label: "Città (JSON)", Section: "JSON"));
+        _rows.Add(new SearchFieldDefinition("brand", "dataScore", FieldKind.Decimal, false,
+            "(\"brand\".\"Data\" #>> '{metrics,score}')::numeric", Label: "Score (JSON)", Section: "JSON"));
+        _rows.Add(new SearchFieldDefinition("brand", "dataTags", FieldKind.String, true,
+            "\"brand\".\"Data\" -> 'tags'", Label: "Tag (JSON)", Section: "JSON"));
     }
 
     public IReadOnlyList<SearchFieldDefinition> GetDefinitions(string entityName, Guid spaceId)

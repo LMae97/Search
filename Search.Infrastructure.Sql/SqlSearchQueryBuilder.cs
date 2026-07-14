@@ -69,11 +69,13 @@ public sealed class SqlSearchQueryBuilder
         if (!field.IsArray)
             return $"{Column(field)} AS \"{name}\"";
 
-        // Campo array/collezione: subquery correlata aggregata in JSON. Riuso ESATTAMENTE lo stesso join
-        // del filtro EXISTS (SqlArrayFilter) → un'unica fonte di verità per "come si raggiunge la collezione".
+        // Campo array/collezione, due "facce" (vedi SqlArrayFilter):
+        //  - M2M (junction): niente Projection → RICOSTRUISCE l'array con json_group_array sullo stesso join del filtro.
+        //  - JSON (jsonb): la colonna È già un array → Projection diretta (es. "brand"."Data" -> 'tags').
         if (!_schema.ArrayFilters.TryGetValue(name, out var join))
             throw new NotSupportedException($"Il campo array '{name}' non ha una mappatura di join SQL (SqlArrayFilter).");
-        return $"(SELECT json_group_array({join.ElementColumn}) {join.From}) AS \"{name}\"";
+        var projection = join.Projection ?? $"(SELECT json_group_array({join.ElementColumn}) {join.From})";
+        return $"{projection} AS \"{name}\"";
     }
 
     private string BuildWhere(FilterNode? filter, Dictionary<string, object?> parameters)

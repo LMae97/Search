@@ -338,6 +338,30 @@ using (var rawConnection = new SqliteConnection("DataSource=:memory:"))
         Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
 }
 
+// --- SQL grezzo (brand, campi JSONB): SOLO RENDER ---
+// Gli operatori JSONB (#>>, jsonb_array_elements, coalesce, ::numeric) sono Postgres → non eseguibili sullo
+// SQLite dello spike. Mostriamo l'SQL generato: è corretto per Postgres. Nota tre cose nel risultato:
+//   1) scalare da oggetto JSON: "Data" #>> '{address,city}' (e il cast ::numeric per lo score);
+//   2) array JSON filtrato via unnest (jsonb_array_elements_text + EXISTS), stesso meccanismo della M2M;
+//   3) array JSON proiettato DIRETTO ("Data" -> 'tags'), non ricostruito con json_group_array.
+Console.WriteLine();
+Console.WriteLine("== SQL GREZZO (brand, campi JSONB): solo render (JSONB richiede Postgres) ==");
+
+var brandJsonSearch = new SearchRequest
+{
+    Filter = Filter.And(
+        Filter.Contains("dataCity", "milano"),      // scalare dentro un oggetto JSON
+        Filter.Gte("dataScore", 4.5m),              // scalare JSON numerico (cast nel path)
+        Filter.ArrayContainsAny("dataTags", "vip", "beta")), // array JSON di scalari
+    Projection = ["code", "dataCity", "dataTags"],
+    Sort = [new SortField("dataScore", SortDirection.Descending)],
+    Page = new PageRequest(1, 20)
+};
+var brandJsonQuery = new SqlSearchQueryBuilder(brandMap, brandSchema).Build(brandJsonSearch);
+Console.WriteLine(brandJsonQuery.Sql);
+foreach (var (name, value) in brandJsonQuery.Parameters)
+    Console.WriteLine($"   {name} = {FormatValue(value)}");
+
 static void ExecRaw(SqliteConnection connection, string sql)
 {
     using var command = connection.CreateCommand();

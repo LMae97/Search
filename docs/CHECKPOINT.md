@@ -92,6 +92,15 @@ Terzo percorso, **guidato solo dai metadati** (nessun modello CLR/EF): il `Path`
 - **Fatti**: escape dei jolly `%`/`_` nel `LIKE` (via `LikeTerm` + `ESCAPE '\'`); rimosso lo scaffold `BaseQueryBuilder` (dead code → via le 3 warning CS0414).
 - **Aperti/caveat**: proiezione array = subquery correlata **per riga** (a volume, spezzare in 2ª query come `AsSplitQuery`); `ORDER BY` senza tiebreak sulla PK (per keyset); `json_group_array` è SQLite → Postgres `json_agg`/`array_agg`.
 
+### JSON/JSONB (Postgres) ✅ (ritocchi fatti, render verificato — non eseguibile su SQLite)
+Campi su colonna `jsonb`, tre casi, quasi tutto **configurazione**:
+- **Scalare da oggetto JSON** → il `Path` del campo è l'estrazione: `"Data" #>> '{address,city}'` (con `::numeric`/`::…` se tipizzato). Operatori scalari **invariati** (contains ci → `lower(#>>) LIKE … ESCAPE`, `>=` sul cast, …). **Zero codice.**
+- **Array JSON (scalari/oggetti)** → `SqlArrayFilter` con `From` = unnest `FROM jsonb_array_elements[_text](coalesce("Data"->'tags','[]'::jsonb)) AS elem WHERE true`; `ElementColumn` = `elem` (scalari) o `e ->> 'sku'` (oggetti). **Stessa macchina EXISTS della M2M → zero codice nel translator.**
+- **Proiezione** → unico vero ritocco: `SqlArrayFilter` ha ora `Projection` (opzionale). `null` ⇒ M2M ricostruita con `json_group_array`; valorizzato ⇒ array JSON proiettato **diretto** (`"Data" -> 'tags'`). `SqlSearchQueryBuilder.SelectColumn` usa `Projection ?? json_group_array(...)`.
+- Alternativa (GIN-indexable) agli unnest: operatori nativi `@>` / `jsonb_exists_any` / `@> jsonb_build_array(...)` — **attenzione al `?` con Npgsql** → usare le funzioni (`jsonb_exists_any/all`). Richiederebbe un ramo nel translator.
+- **Caveat**: JSONB è **solo Postgres** → la demo del console è **solo render** dell'SQL (corretto per PG), non eseguita su SQLite. Gli operatori array sono di *appartenenza*, non predicati arbitrari sui sotto-campi (es. `lines[].qty>5`) → servirebbe un nodo "any-element-matches" (futuro).
+- Config di prova su `brand`: colonna `Data jsonb` con campi `dataCity` (oggetto), `dataScore` (numerico col cast), `dataTags` (array) — vedi `SimulatedFieldDefinitionDatabase` + `CatalogSqlSchemaProvider`.
+
 `StoreKind` ora: **`PostgresEF` / `PostgresRaw` / `Mongo`**; `SearchEntity` factory: `RelationalEF<T>` / `RelationalRaw<T>` / `Document`. Il resolver instrada `PostgresEF`→Expression, gli altri→`StoragePath`.
 
 ## Campi a DB (fase decisa 2026-07-13)

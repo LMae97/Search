@@ -23,6 +23,12 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         {
             ["tags"] = new SqlArrayFilter(BrandTagJoin, "\"tag\".\"Name\""),
             ["tagIds"] = new SqlArrayFilter(BrandTagJoin, "\"tag\".\"Id\""),
+            // JSON: array inline nella colonna "Data". Filtro via unnest (EXISTS); proiezione diretta (la
+            // colonna È già l'array → niente json_group_array). coalesce → nessun errore se la chiave manca.
+            ["dataTags"] = new SqlArrayFilter(
+                From: "FROM jsonb_array_elements_text(coalesce(\"brand\".\"Data\" -> 'tags','[]'::jsonb)) AS elem WHERE true",
+                ElementColumn: "elem",
+                Projection: "\"brand\".\"Data\" -> 'tags'"),
         }
     };
 

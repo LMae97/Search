@@ -169,6 +169,11 @@ public sealed record SqlFilter(string Sql, IReadOnlyList<object?> Parameters);
 /// non nei metadati store-agnostic: la forma relazionale — tabella ponte, chiavi, correlazione — è un
 /// dettaglio d'infrastruttura, esattamente come la mappatura fluent di EF sta nel <c>DbContext</c>.
 /// </summary>
-/// <param name="From">Tutto ciò che segue <c>SELECT 1</c>: <c>FROM</c>/<c>JOIN</c> + <c>WHERE</c> di correlazione col padre.</param>
-/// <param name="ElementColumn">Colonna dell'elemento su cui si applica il predicato (es. <c>"tag"."Name"</c>).</param>
-public sealed record SqlArrayFilter(string From, string ElementColumn);
+/// <param name="From">Tutto ciò che segue <c>SELECT 1</c>: <c>FROM</c>/<c>JOIN</c> + <c>WHERE</c> di correlazione col padre.
+/// Per una M2M è la join sulla tabella-ponte; per un array JSON è un unnest (<c>jsonb_array_elements[_text]</c>) chiuso da <c>WHERE true</c>.</param>
+/// <param name="ElementColumn">Colonna/estrazione dell'elemento su cui si applica il predicato (es. <c>"tag"."Name"</c> o <c>e ->> 'sku'</c>).</param>
+/// <param name="Projection">
+/// Come proiettare l'intero array nel <c>SELECT</c>. <c>null</c> ⇒ lo si RICOSTRUISCE con <c>json_group_array(ElementColumn)</c>
+/// sullo stesso join (caso M2M). Valorizzato ⇒ espressione diretta (es. <c>"brand"."Data" -> 'tags'</c>: la colonna JSON È già l'array).
+/// </param>
+public sealed record SqlArrayFilter(string From, string ElementColumn, string? Projection = null);
