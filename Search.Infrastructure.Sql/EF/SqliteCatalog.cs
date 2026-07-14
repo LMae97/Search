@@ -2,10 +2,10 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace Search.Infrastructure.Sql;
+namespace Search.Infrastructure.Sql.EF;
 
 /// <summary>
-/// Crea un <see cref="CatalogDbContext"/> su SQLite <b>in-memory</b> (spike). Per passare a Postgres
+/// Crea un <see cref="CatalogDbContext"/> su SQLite <b>in-memory</b> (spike). Per passare a PostgresEF
 /// basta sostituire <c>UseSqlite</c> con <c>UseNpgsql(connectionString)</c>: il resto non cambia.
 /// </summary>
 public static class SqliteCatalog

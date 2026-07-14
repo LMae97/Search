@@ -1,3 +1,4 @@
+using Search.Domain.Catalog.Tags;
 using Search.Domain.Common;
 
 namespace Search.Domain.Catalog.Brands;
@@ -8,6 +9,8 @@ namespace Search.Domain.Catalog.Brands;
 /// </summary>
 public sealed class Brand : AggregateRoot<Guid>
 {
+    private readonly List<Tag> _tags = [];
+
     public string Name { get; private set; } = string.Empty;
 
     /// <summary>Slug univoco stabile (es. "acme-corp"). Chiave naturale usata nelle URL.</summary>
@@ -21,6 +24,12 @@ public sealed class Brand : AggregateRoot<Guid>
     public Uri? Website { get; private set; }
     public Uri? LogoUrl { get; private set; }
     public bool IsActive { get; private set; }
+
+    /// <summary>
+    /// Tag associati: relazione <b>molti-a-molti</b> con <see cref="Tag"/> (EF la gestisce come
+    /// skip navigation sulla tabella di giunzione). Nella ricerca è proiettata sui nomi/id dei tag.
+    /// </summary>
+    public IReadOnlyCollection<Tag> Tags => _tags.AsReadOnly();
 
     private Brand()
     {

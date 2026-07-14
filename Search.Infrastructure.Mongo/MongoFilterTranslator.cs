@@ -66,6 +66,7 @@ public sealed class MongoFilterTranslator<TDocument>
     private BsonDocument BuildLogical(LogicalFilterNode node)
     {
         var children = new BsonArray(node.Children.Select(Build));
+
         return node.Operator switch
         {
             LogicalOperator.And => new BsonDocument("$and", children),

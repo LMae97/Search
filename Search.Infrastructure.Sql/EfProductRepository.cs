@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Search.Application.Catalog;
 using Search.Domain.Catalog.Products;
+using Search.Infrastructure.Sql.EF;
 
 namespace Search.Infrastructure.Sql;
 

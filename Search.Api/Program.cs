@@ -26,7 +26,7 @@ builder.Services
 builder.Services.AddSingleton<IProductRepository, InMemoryProductRepository>();
 builder.Services.AddSingleton(new SearchEntityRegistry(
 [
-    SearchEntity.Relational<Product>("product"),
+    SearchEntity.RelationalEF<Product>("product"),
     SearchEntity.Document("order")
 ]));
 builder.Services.AddSingleton<ISearchFieldDefinitionProvider, SimulatedFieldDefinitionDatabase>();

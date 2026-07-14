@@ -1,4 +1,4 @@
-using EphemeralMongo;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 using Search.Application.Querying;
@@ -7,6 +7,7 @@ using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Filters;
 using Search.Application.Querying.Linq;
 using Search.Application.Querying.Validation;
+using Search.Domain.Catalog.Brands;
 using Search.Domain.Catalog.Products;
 using Search.Domain.Catalog.Products.ValueObjects;
 using Search.Domain.Catalog.Tags;
@@ -15,9 +16,10 @@ using Search.Domain.Ordering.Orders;
 using Search.Domain.Ordering.Orders.ValueObjects;
 using Search.Infrastructure.Mongo;
 using Search.Infrastructure.Sql;
+using Search.Infrastructure.Sql.EF;
 
 // ===========================================================================================
-// Dati in memoria. In produzione: IQueryable<Product> (EF Core / Postgres) e
+// Dati in memoria. In produzione: IQueryable<Product> (EF Core / PostgresEF) e
 // IMongoCollection<Order> (Mongo). Qui liste, così il motore gira senza infrastruttura reale.
 // ===========================================================================================
 
@@ -85,10 +87,15 @@ var fieldDatabase = new SimulatedFieldDefinitionDatabase();
 var spaceA = SimulatedFieldDefinitionDatabase.DemoSpace;
 var searchEntities = new SearchEntityRegistry(new[]
 {
-    SearchEntity.Relational<Product>("product"), // relazionale: il path è una property-path CLR
-    SearchEntity.Document("order")               // documentale: il path è il path del documento Mongo
+    SearchEntity.RelationalEF<Product>("product"), // relazionale: il path è una property-path CLR
+    SearchEntity.Document("order"),                // documentale: il path è il path del documento Mongo
+    SearchEntity.RelationalRaw<Brand>("brand")     // relazionale
 });
 var dbMaps = new DbBackedSearchMapProvider(fieldDatabase, new SearchFieldDefinitionResolver(searchEntities));
+
+// Config SQL per-entità dello store "raw" (FROM base, soft-delete, join collezioni): hardcodata in codice
+// (cambia solo con una migrazione/deploy), come il fluent mapping di EF nel DbContext. Recuperata per nome.
+ISqlSchemaProvider sqlSchemas = new CatalogSqlSchemaProvider();
 
 // --- Prodotto (store relazionale, eseguito in memoria) ---
 // "tags" è definito a DB solo come path "Tags.Name" (collezione M2M) → ricostruito in x.Tags.Select(t => t.Name).
@@ -218,7 +225,8 @@ new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
 
 Console.WriteLine();
 Console.WriteLine("== SPLIT QUERY (.AsSplitQuery()): 2 SELECT separati, nessuna duplicazione ==");
-new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query().AsSplitQuery(), efSanitized);
+//new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query().AsSplitQuery(), efSanitized);
+new LinqSearchExecutor<Product>(efMap).Execute(efRepo.Query(), efSanitized);
 
 /*
 // --- Mongo: la query completa generata dall'executor (filtro + proiezione + sort + paginazione) ---
@@ -268,6 +276,74 @@ catch (Exception ex)
     Console.WriteLine("(l'executor resta pronto: Execute(collection, request) su un Mongo reale/Atlas.)");
 }
 */
+
+// --- SQL grezzo (brand): store PostgresRaw, nessun modello CLR/EF — solo metadati → SQL parametrizzato ---
+// Lo stesso albero di filtri degli altri store, ma il translator emette testo SQL con parametri (@p0, @p1, …).
+Console.WriteLine();
+Console.WriteLine("== SQL GREZZO (brand): albero di filtri → WHERE parametrizzato ==");
+
+var brandMap = dbMaps.GetEffectiveMap("brand", new SearchCaller(spaceA, new HashSet<Guid>()));
+
+// La config SQL di brand (FROM base, soft-delete, join dei tag) è centralizzata nel provider: la recupero per nome.
+var brandSchema = sqlSchemas.GetSchema("brand");
+
+// code contiene "acme" (case-insensitive) AND tag ⊇ {sale, novità}
+var brandFilter = Filter.And(
+    Filter.Contains("code", "acme"),
+    Filter.ArrayContainsAny("tags", "sale", "novità"));
+
+var brandSql = new SqlFilterTranslator(brandMap, brandSchema.ArrayFilters).Translate(brandFilter);
+Console.WriteLine("WHERE " + brandSql.Sql);
+for (var i = 0; i < brandSql.Parameters.Count; i++)
+    Console.WriteLine($"   @p{i} = {FormatValue(brandSql.Parameters[i])}");
+
+// --- SQL grezzo (brand): query completa assemblata + esecuzione reale su SQLite ---
+// Schema creato a mano (niente EF/modello): è proprio il senso dello store PostgresRaw.
+Console.WriteLine();
+Console.WriteLine("== SQL GREZZO (brand): query completa + esecuzione reale su SQLite ==");
+using (var rawConnection = new SqliteConnection("DataSource=:memory:"))
+{
+    rawConnection.Open();
+    ExecRaw(rawConnection, """
+        CREATE TABLE "Brands" ("Id" TEXT, "Code" TEXT, "Description" TEXT, "CountryOfOrigin" TEXT, "Website" TEXT, "LogoUrl" TEXT, "IsDeleted" INTEGER);
+        CREATE TABLE "Tags"   ("Id" TEXT, "Name" TEXT, "IsDeleted" INTEGER);
+        CREATE TABLE "BrandTag" ("BrandId" TEXT, "TagsId" TEXT);
+        INSERT INTO "Tags" VALUES ('t1','sale',0), ('t2','novità',0), ('t3','pro',0);
+        INSERT INTO "Brands" VALUES
+            ('b1','ACME','Roba varia','IT','acme.example','',0),
+            ('b2','ACME-PRO','Premium','IT','acmepro.example','',0),
+            ('b3','GLOBEX','Altro','US','globex.example','',0);
+        INSERT INTO "BrandTag" VALUES ('b1','t1'), ('b1','t2'), ('b2','t3'), ('b3','t1');
+        """);
+
+    var brandBuilder = new SqlSearchQueryBuilder(brandMap, brandSchema);
+
+    var brandSearch = new SearchRequest
+    {
+        Filter = brandFilter,
+        Projection = ["code", "countryOfOrigin", "tags"],
+        Sort = [new SortField("code", SortDirection.Ascending)],
+        Page = new PageRequest(1, 20)
+    };
+
+    var dataQuery = brandBuilder.Build(brandSearch);
+    Console.WriteLine(dataQuery.Sql);
+    Console.WriteLine();
+
+    var rawExecutor = new RawSqlSearchExecutor();
+    var total = rawExecutor.Count(rawConnection, brandBuilder.BuildCount(brandSearch));
+    var brandRows = rawExecutor.Query(rawConnection, dataQuery);
+    Console.WriteLine($"Eseguito su SQLite → {total} match:");
+    foreach (var row in brandRows)
+        Console.WriteLine("   " + string.Join(", ", row.Select(kv => $"{kv.Key}={FormatValue(kv.Value)}")));
+}
+
+static void ExecRaw(SqliteConnection connection, string sql)
+{
+    using var command = connection.CreateCommand();
+    command.CommandText = sql;
+    command.ExecuteNonQuery();
+}
 
 static string FormatValue(object? value) => value switch
 {

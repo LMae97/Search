@@ -6,7 +6,8 @@ namespace Search.Application.Querying.Dynamic;
 /// </summary>
 public sealed record SearchEntity(string Name, StoreKind Store, Type? ClrType)
 {
-    public static SearchEntity Relational<T>(string name) => new(name, StoreKind.Postgres, typeof(T));
+    public static SearchEntity RelationalEF<T>(string name) => new(name, StoreKind.PostgresEF, typeof(T));
+    public static SearchEntity RelationalRaw<T>(string name) => new(name, StoreKind.PostgresRaw, typeof(T));
 
     public static SearchEntity Document(string name) => new(name, StoreKind.Mongo, ClrType: null);
 }

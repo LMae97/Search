@@ -1,12 +1,15 @@
 # Checkpoint — Progetto "Search" (BE)
 
-> Ultimo aggiornamento: 2026-07-13
+> Ultimo aggiornamento: 2026-07-14
 
-> **DECISIONE (2026-07-13):** si procede verso definizioni dei campi **a DB** (approccio data-driven,
-> ritenuto più diretto per l'applicazione). Le fette 1-2 (motore + autorizzazione + campi dinamici,
-> in memoria) restano la base. Prossimo lavoro: portare le definizioni su DB. Nodo aperto da decidere:
-> come gestire il *binding* per le entità relazionali (path-string+reflection vs overlay vs Dynamic LINQ).
-> Vedi sezione "Campi a DB" in fondo.
+> **Stato (2026-07-14):** il motore di ricerca è validato su **tre store** con lo **stesso contratto/albero di
+> filtri** e le definizioni dei campi **a DB** (data-driven):
+> - **PostgresEF** — albero → `Expression` → EF Core (SQL reale su SQLite; Postgres = `UseSqlite`→`UseNpgsql`).
+> - **Mongo** — albero → `BsonDocument` (eseguito su mongod effimero).
+> - **PostgresRaw** — albero → **SQL testuale parametrizzato**, eseguito via ADO.NET puro (nessun ORM/modello CLR).
+>
+> Il deliverable è **il motore** (alternativa al Dynamic LINQ dell'utente, da riportare nel progetto principale);
+> API e dominio sono "contorno". Vedi in fondo: "Sistema unificato data-driven" e "SQL grezzo (store PostgresRaw)".
 
 ## Obiettivo
 Backend per schermate di ricerca su più entità del sistema. Il FE deve poter:
@@ -74,6 +77,22 @@ In `Search.Application/Querying/Dynamic` + `Querying/Metadata/MaterializedSearch
 ## EF Core / SQLite — spike SQL ✅ (fatto e verificato)
 Progetto `Search.Infrastructure.Sql` (EFCore.Sqlite 10.0.9): `CatalogDbContext` (Product + Tag), `EfProductRepository` (+`ToSql` via `ToQueryString`), factory `SqliteCatalog.CreateInMemory()`. Mapping dominio ricco: `Sku` via converter, `Money`/`Dimensions` owned, `Status` enum→stringa, **Tags M2M skip navigation** (`HasMany().WithMany()`), **soft-delete** query filter globale, `DomainEvents`/`Barcodes` ignorati. Lo **stesso motore** (definizioni DB → Expression) gira su `IQueryable` EF → SQL reale: il filtro M2M diventa **`EXISTS`** sulla giunzione (niente moltiplicazione righe), il `contains` diventa `lower(...)`, soft-delete applicato. Passaggio a **Postgres = una riga** (`UseSqlite`→`UseNpgsql`). NB: warning NuGet NU1903 su `SQLitePCLRaw` (dep transitiva SQLite) — sparisce con Npgsql. Spike guidato dal console `Search`.
 
+**`AsSplitQuery` — single vs split ✅ (dimostrato, 2026-07-14).** Con la proiezione delle collezioni (tags) EF di default emette **1 SELECT con LEFT JOIN** → righe radice **duplicate** per ogni tag (cartesian explosion, moltiplicativo con più collezioni). `.AsSplitQuery()` → **2 SELECT** (radici + tag correlati per chiave), zero duplicazione, al costo di N+1 round-trip e nessuna atomicità tra le query (serve ordinamento stabile: EF aggiunge la PK all'`ORDER BY`). Regola: non è "sempre meglio" — split vince su collezioni grandi/multiple. **Posizionamento**: `AsSplitQuery` è EF-only e il flag propaga lungo la catena → si applica nell'**adapter SQL** (repo/`IQueryable`), **non** nell'executor store-agnostic (che gira anche in memoria e lancerebbe eccezione). Dimostrato nel console `Search` sulla stessa richiesta (blocco "SINGLE QUERY vs SPLIT QUERY").
+
+> **Riorg (2026-07-14):** il progetto `Search.Infrastructure.Sql` è diviso in due namespace: `Search.Infrastructure.Sql.EF` (store EF: `CatalogDbContext`, `EfProductRepository`, `SqliteCatalog`) e `Search.Infrastructure.Sql` (store raw: translator/builder/executor testuali, vedi sotto).
+
+## SQL grezzo — store `PostgresRaw` ✅ (fatto e verificato end-to-end, 2026-07-14)
+Terzo percorso, **guidato solo dai metadati** (nessun modello CLR/EF): il `Path` della definizione è direttamente l'espressione-colonna SQL (es. `"brand"."Code"`). Entità di prova: **`brand`** (`SearchEntity.RelationalRaw<Brand>`). In `Search.Infrastructure.Sql`:
+- **`SqlFilterTranslator`** — albero → **clausola WHERE parametrizzata**. Ritorna `SqlFilter { Sql, Parameters }` (simmetrico: LINQ→`Expression`, Mongo→`BsonDocument`). Scalari: `=, <>, >, >=, <, <=, BETWEEN, IN/NOT IN, LIKE` (contains/startsWith/endsWith **case-insensitive** via `lower()` su entrambi i lati, coerente con gli altri store), `IS [NOT] NULL`. Array/M2M: **`EXISTS`** correlato (contains/containsAny/containsAll/isEmpty/notEmpty). **Sicurezza**: i nomi-colonna (whitelist → fidati) sono interpolati; i **valori utente non si interpolano mai** → parametri `@p0,@p1,…` (niente SQL injection).
+- **`SqlArrayFilter { From, ElementColumn }`** — come una collezione M2M diventa un `EXISTS` correlato (tabella ponte + join + correlazione col padre). Vive **nell'adapter SQL**, non nei metadati store-agnostic (è forma relazionale = infrastruttura, come il fluent mapping di EF nel DbContext). **Unica fonte di verità**: lo stesso `SqlArrayFilter` alimenta sia il filtro `EXISTS` sia la proiezione dell'array via `json_group_array`.
+- **`SqlSearchQueryBuilder`** — assembla la query completa parametrizzata: `SELECT` (proiezione; array → subquery `json_group_array`), `FROM` base, `WHERE` (base soft-delete AND filtro), `ORDER BY`, `LIMIT @take OFFSET @skip`. Ritorna `SqlQuery { Sql, Parameters, Fields }` (+`BuildCount`). Paginazione con parametri **nominali** (`@skip/@take`) per non collidere coi `@pN` posizionali del filtro.
+- **`RawSqlSearchExecutor`** — esegue una `SqlQuery` su **qualsiasi `DbConnection` ADO.NET** (SQLite ora, Npgsql poi): `Query` (righe→dizionari per alias) + `Count`. Valori sempre legati come parametri.
+- **`SqlEntitySchema` + `ISqlSchemaProvider`** (impl: **`CatalogSqlSchemaProvider`**) — la config SQL per-entità (`From`, `BasePredicate`, `ArrayFilters`) **centralizzata** e recuperata **per nome** (`sqlSchemas.GetSchema("brand")`), separata dai metadati store-agnostic. **Hardcodata in codice** (non da DB): lo schema — tabella/alias/tabella-ponte/soft-delete — è struttura, cambia solo con una migrazione/deploy → sta nel codice come il fluent mapping di EF nel `CatalogDbContext`. (Le *definizioni dei campi* restano invece data-driven.) Flusso: entità → `GetEffectiveMap` (campi, per permessi/tenant) **+** `GetSchema` (binding SQL) → `new SqlSearchQueryBuilder(map, schema)`.
+- **Verificato end-to-end su SQLite** (schema `Brands`/`Tags`/`BrandTag` creato a mano, nessun EF): `code contains "acme" AND tags ⊇ {sale,novità}` → 1 match `code=ACME, countryOfOrigin=IT, tags=["sale","novità"]`; soft-delete nella base; tutto parametrizzato (`@p0=%acme%, @p1=sale, @p2=novità, @skip, @take`).
+- **Aperti/caveat**: `LIKE` non escapa i jolly `%`/`_` nel termine (match semantico, non injection — da aggiungere `ESCAPE`); proiezione array = subquery correlata **per riga** (a volume, spezzare in 2ª query come `AsSplitQuery`); `ORDER BY` senza tiebreak sulla PK (per keyset); `json_group_array` è SQLite → Postgres `json_agg`/`array_agg`; la classe scaffold `BaseQueryBuilder` è superata da `SqlArrayFilter` (3 warning CS0414, da rimuovere/spostare).
+
+`StoreKind` ora: **`PostgresEF` / `PostgresRaw` / `Mongo`**; `SearchEntity` factory: `RelationalEF<T>` / `RelationalRaw<T>` / `Document`. Il resolver instrada `PostgresEF`→Expression, gli altri→`StoragePath`.
+
 ## Campi a DB (fase decisa 2026-07-13)
 Obiettivo: le definizioni dei campi (statici + dinamici) vivono a DB, come nel vecchio progetto (`SearchField`).
 Nodo tecnico centrale: **il binding non si serializza** (non puoi salvare una lambda). Risoluzioni:
@@ -119,8 +138,9 @@ Aperti da discutere: layer DTO/JSON ✅ (fatto: `FilterNodeJsonConverter` nell'A
 ## Note / preferenze
 - Focus dichiarato: **leggibilità e manutenibilità**.
 - L'utente (mid, 3 anni) vuole spiegazioni con il *perché* delle scelte (taglio da mentoring).
-- L'utente è interessato a **scrivere SQL** più avanti → quando agganceremo EF Core mostreremo l'SQL generato
-  dall'`Expression` e valuteremo query scritte a mano dove conviene.
+- L'utente è interessato a **scrivere SQL**: fatto sia via EF (SQL generato dall'`Expression`, con `AsSplitQuery`)
+  sia a mano nello store **PostgresRaw** (`SqlFilterTranslator`/`SqlSearchQueryBuilder`). Preferisce vedere le cose
+  girare **end-to-end su DB reali** (SQLite, mongod effimero), non solo il testo generato.
 
 ## Comandi utili
 ```bash

@@ -9,7 +9,7 @@ namespace Search.Application.Querying.Linq;
 /// <summary>
 /// Traduce un albero di filtri in <c>Expression&lt;Func&lt;TEntity,bool&gt;&gt;</c>.
 /// La stessa Expression è consumata da LINQ-to-Objects (test in memoria) e da EF Core
-/// (che la traduce in SQL). È il translator per il mondo Postgres/relazionale.
+/// (che la traduce in SQL). È il translator per il mondo PostgresEF/relazionale.
 /// Presuppone che la richiesta sia già stata validata dal <c>SearchRequestValidator</c>.
 /// </summary>
 public sealed class LinqFilterTranslator<TEntity>

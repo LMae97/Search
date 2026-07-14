@@ -3,10 +3,10 @@ using Search.Domain.Catalog.Products;
 using Search.Domain.Catalog.Products.ValueObjects;
 using Search.Domain.Catalog.Tags;
 
-namespace Search.Infrastructure.Sql;
+namespace Search.Infrastructure.Sql.EF;
 
 /// <summary>
-/// DbContext del catalogo (Postgres in produzione, SQLite per lo spike). Mostra come si mappa
+/// DbContext del catalogo (PostgresEF in produzione, SQLite per lo spike). Mostra come si mappa
 /// il dominio ricco: value object come owned/converted, M2M come skip navigation, enum come stringa,
 /// soft-delete come filtro globale. Gli stessi selettori del motore di ricerca diventano SQL qui.
 /// </summary>

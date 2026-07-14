@@ -50,6 +50,15 @@ public sealed class SimulatedFieldDefinitionDatabase : ISearchFieldDefinitionPro
         // === campo dinamico, solo per il tenant DemoSpace ===
         _rows.Add(new SearchFieldDefinition("order", "deliveryZone", FieldKind.String, false, "attributes.deliveryZone",
             Label: "Zona di consegna", Section: "Logistica", SpaceId: DemoSpace));
+
+        _rows.Add(new SearchFieldDefinition("brand", "id", FieldKind.Guid, false, "\"brand\".\"Id\""));
+        _rows.Add(new SearchFieldDefinition("brand", "code", FieldKind.String, false, "\"brand\".\"Code\""));
+        _rows.Add(new SearchFieldDefinition("brand", "description", FieldKind.String, false, "\"brand\".\"Description\""));
+        _rows.Add(new SearchFieldDefinition("brand", "countryOfOrigin", FieldKind.String, false, "\"brand\".\"CountryOfOrigin\""));
+        _rows.Add(new SearchFieldDefinition("brand", "website", FieldKind.String, false, "\"brand\".\"Website\""));
+        _rows.Add(new SearchFieldDefinition("brand", "logoUrl", FieldKind.String, false, "\"brand\".\"LogoUrl\""));
+        _rows.Add(new SearchFieldDefinition("brand", "tags", FieldKind.String, true, "\"tag\".\"Name\"", Label: "Tag"));
+        _rows.Add(new SearchFieldDefinition("brand", "tagIds", FieldKind.Guid, true, "\"tag\".\"Id\""));
     }
 
     public IReadOnlyList<SearchFieldDefinition> GetDefinitions(string entityName, Guid spaceId)
