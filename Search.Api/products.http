@@ -67,8 +67,17 @@ Content-Type: {{contentType}}
       { "field": "tags", "op": "containsAny", "values": ["sale", "novità"] }
     ]
   },
-  "projection": ["name", "price", "tags"],
+  "projection": ["name", "price", "tags", "priceAmount"],
   "sort": [{ "field": "price", "direction": "Descending" }],
+  "page": { "number": 1, "size": 20 }
+}
+
+### Ricerca: price >= 10 AND tags ⊇ {sale|novità}, ordinati per prezzo desc
+POST {{baseUrl}}/products/search
+Content-Type: {{contentType}}
+
+{
+  "projection": ["name", "price", "tags"],
   "page": { "number": 1, "size": 20 }
 }
 

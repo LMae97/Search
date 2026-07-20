@@ -25,4 +25,10 @@ public interface IProductRepository
 
     /// <summary>Sorgente interrogabile per il motore di ricerca (LINQ in memoria oggi, EF domani).</summary>
     IQueryable<Product> Query();
+
+    /// <summary>
+    /// Persiste le modifiche fatte sull'aggregato ottenuto con <see cref="Get"/>. No-op in memoria (stesso
+    /// riferimento), <c>SaveChanges</c> su EF. Va chiamato dopo update/cambio-stato.
+    /// </summary>
+    void Save();
 }

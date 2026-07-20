@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Search.Application\Search.Application.csproj" />
     <ProjectReference Include="..\Search.Domain\Search.Domain.csproj" />
+    <ProjectReference Include="..\Search.Infrastructure.Sql\Search.Infrastructure.Sql.csproj" />
   </ItemGroup>
 
 </Project>

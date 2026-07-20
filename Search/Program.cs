@@ -7,7 +7,6 @@ using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Filters;
 using Search.Application.Querying.Linq;
 using Search.Application.Querying.Validation;
-using Search.Domain.Catalog.Brands;
 using Search.Domain.Catalog.Products;
 using Search.Domain.Catalog.Products.ValueObjects;
 using Search.Domain.Catalog.Tags;
@@ -83,7 +82,7 @@ var orders = new List<Order>
 //   definizioni -> resolver (path→binding) -> mappa effettiva (per tenant + permessi) -> pipeline
 // ===========================================================================================
 
-var fieldDatabase = new SimulatedFieldDefinitionDatabase();
+var fieldDatabase = SimulatedFieldDefinitionDatabase.Create();
 var spaceA = SimulatedFieldDefinitionDatabase.DemoSpace;
 var searchEntities = new SearchEntityRegistry(new[]
 {

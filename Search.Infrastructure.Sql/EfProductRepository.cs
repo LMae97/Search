@@ -25,6 +25,9 @@ public sealed class EfProductRepository : IProductRepository
 
     public IQueryable<Product> Query() => _db.Products;
 
+    // Persiste su DB le modifiche fatte sull'aggregato tracciato ottenuto con Get.
+    public void Save() => _db.SaveChanges();
+
     /// <summary>Restituisce l'SQL che EF genererebbe per il predicato, senza eseguirlo (per ispezione).</summary>
     public string ToSql(Expression<Func<Product, bool>> predicate) => _db.Products.Where(predicate).ToQueryString();
 }

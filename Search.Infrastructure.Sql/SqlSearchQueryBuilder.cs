@@ -44,7 +44,7 @@ public sealed class SqlSearchQueryBuilder
             orderBy +
             "LIMIT @take OFFSET @skip";
 
-        return new SqlQueryPlan(sql, parameters, names);
+        return new SqlQueryPlan(sql, parameters);
     }
 
     /// <summary>Query di conteggio totale (stesso WHERE, senza proiezione/ordinamento/paginazione).</summary>
@@ -53,7 +53,7 @@ public sealed class SqlSearchQueryBuilder
         var parameters = new Dictionary<string, object?>();
         var where = BuildWhere(request.Filter, parameters);
         var sql = $"SELECT COUNT(*)\n{_schema.From}\n{where}".TrimEnd();
-        return new SqlQueryPlan(sql, parameters, ["count"]);
+        return new SqlQueryPlan(sql, parameters);
     }
 
     private IReadOnlyList<string> ResolveProjection(IReadOnlyList<string> projection) =>
@@ -118,4 +118,4 @@ public sealed class SqlSearchQueryBuilder
 }
 
 /// <summary>Query SQL completa e parametrizzata + i nomi dei campi proiettati (nell'ordine del SELECT). Gemello di <c>MongoQueryPlan</c>.</summary>
-public sealed record SqlQueryPlan(string Sql, IReadOnlyDictionary<string, object?> Parameters, IReadOnlyList<string> Fields);
+public sealed record SqlQueryPlan(string Sql, IReadOnlyDictionary<string, object?> Parameters);

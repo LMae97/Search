@@ -1,14 +1,13 @@
 using System.Text.Json.Serialization;
-using Search.Api.Repositories;
-using Search.Api.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Search.Application.Catalog;
+using Search.Application.Querying;
 using Search.Application.Querying.Dynamic;
-using Search.Domain.Catalog.Products;
-using Search.Domain.Catalog.Products.ValueObjects;
-using Search.Domain.Catalog.Tags;
 using Search.Domain.Common;
-using Search.Domain.Common.ValueObjects;
 using Search.Application.Querying.Validation;
+using Search.Api.Serialization;
+using Search.Infrastructure.Sql;
+using Search.Infrastructure.Sql.EF;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,16 +21,33 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-// Composizione: repository + motore di ricerca (definizioni "a DB").
-builder.Services.AddSingleton<IProductRepository, InMemoryProductRepository>();
+// --- Postgres: EF per il CRUD, connessione ADO.NET per la ricerca SQL grezza (stesso DB) ---
+var catalogConnectionString = builder.Configuration.GetConnectionString("Catalog")
+    ?? throw new InvalidOperationException("Manca la connection string 'Catalog' (appsettings o variabile d'ambiente).");
+
+builder.Services.AddDbContext<CatalogDbContext>(options => options.UseNpgsql(catalogConnectionString));
+builder.Services.AddScoped<IProductRepository, EfProductRepository>();                              // CRUD via EF
+builder.Services.AddSingleton<ICatalogConnectionFactory>(new NpgsqlCatalogConnectionFactory(catalogConnectionString)); // ricerca raw
+builder.Services.AddSingleton<ISqlSchemaProvider, CatalogSqlSchemaProvider>();
+
+// --- Motore di ricerca (definizioni "a DB"): product = SQL grezzo (PostgresRaw), order = Mongo ---
 builder.Services.AddSingleton(new SearchEntityRegistry(
 [
-    SearchEntity.RelationalEF<Product>("product"),
+    SearchEntity.RelationalRaw("product"),
     SearchEntity.Document("order")
 ]));
-builder.Services.AddSingleton<ISearchFieldDefinitionProvider, SimulatedFieldDefinitionDatabase>();
+builder.Services.AddSingleton<ISearchFieldDefinitionProvider>(_ => SimulatedFieldDefinitionDatabase.Create());
 builder.Services.AddSingleton<SearchFieldDefinitionResolver>();
 builder.Services.AddSingleton<DbBackedSearchMapProvider>();
+
+// --- Layer di ricerca: un handler per entità/store, dietro un facade unico (ISearchService) ---
+// product = SQL grezzo (PostgresRaw). Aggiungere un'entità = registrare un altro ISearchHandler.
+builder.Services.AddSingleton<ISearchHandler>(sp => new SqlSearchHandler(
+    "product",
+    sp.GetRequiredService<DbBackedSearchMapProvider>(),
+    sp.GetRequiredService<ISqlSchemaProvider>(),
+    sp.GetRequiredService<ICatalogConnectionFactory>()));
+builder.Services.AddSingleton<ISearchService, SearchService>();
 
 var app = builder.Build();
 
@@ -59,7 +75,13 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-SeedProducts(app.Services.GetRequiredService<IProductRepository>());
+// Schema (spike: EnsureCreated; in produzione → migrazioni) e seed se il DB è vuoto. In uno scope perché
+// il repository/DbContext sono scoped.
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Database.EnsureCreated();
+    var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+}
 
 app.Run();
 
@@ -69,29 +91,4 @@ static Task WriteProblem(HttpContext context, int status, string detail)
 {
     context.Response.StatusCode = status;
     return context.Response.WriteAsJsonAsync(new { status, detail });
-}
-
-static void SeedProducts(IProductRepository repo)
-{
-    var brandId = Guid.NewGuid();
-
-    Product Make(string sku, string name, decimal price, ProductStatus status, params string[] tags)
-    {
-        var product = Product.Create(Sku.Create(sku), name, brandId, Money.Of(price, "EUR"));
-        foreach (var tag in tags)
-            product.AddTag(Tag.Create(tag));
-        product.AddStock(10);
-        product.Publish();
-        if (status == ProductStatus.OutOfStock)
-            product.RemoveStock(10);
-        else if (status == ProductStatus.Discontinued)
-            product.Discontinue();
-        product.ApplyCreationAudit("seed@we-byte.it", DateTimeOffset.UtcNow);
-        repo.Add(product);
-        return product;
-    }
-
-    Make("WIDGET-PRO", "Widget Pro", 17.50m, ProductStatus.Active, "novità");
-    Make("GADGET", "Gadget", 5.00m, ProductStatus.Active, "sale");
-    Make("BUNDLE", "Bundle", 49.90m, ProductStatus.OutOfStock, "sale", "novità");
 }

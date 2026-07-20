@@ -11,7 +11,22 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     public SqlEntitySchema GetSchema(string entityName) => entityName.ToLowerInvariant() switch
     {
         "brand" => Brand,
+        "product" => Product,
         _ => throw new InvalidOperationException($"Nessuna configurazione SQL per l'entità '{entityName}'.")
+    };
+
+    private static readonly SqlEntitySchema Product = new(
+        From: "FROM \"Products\" AS \"product\"",
+        BasePredicate: "NOT (\"product\".\"IsDeleted\")") // soft-delete: sempre in AND col filtro utente
+    {
+        ArrayMappings = new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Postgres: proiezione via array_agg (json_group_array è SQLite). COALESCE → array vuoto se nessun tag.
+            ["tags"] = new SqlArrayMapping(ProductTagJoin, "\"tag\".\"Name\"",
+                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) {ProductTagJoin})"),
+            ["tagIds"] = new SqlArrayMapping(ProductTagJoin, "\"tag\".\"Id\"",
+                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) {ProductTagJoin})"),
+        }
     };
 
     // brand → tabella "Brands" (alias "brand"), soft-delete su IsDeleted, tag via tabella ponte "BrandTag".
@@ -43,4 +58,15 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         ) AS "tag" ON "bt"."TagsId" = "tag"."Id"
         WHERE "brand"."Id" = "bt"."BrandId"
         """;
+
+    private const string ProductTagJoin = """
+        FROM "ProductTag" AS "pt"
+        INNER JOIN (
+            SELECT "t"."Id", "t"."Name"
+            FROM "Tags" AS "t"
+            WHERE NOT ("t"."IsDeleted")
+        ) AS "tag" ON "pt"."TagsId" = "tag"."Id"
+        WHERE "product"."Id" = "pt"."ProductId"
+        """;
+
 }

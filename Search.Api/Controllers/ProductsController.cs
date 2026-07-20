@@ -4,8 +4,6 @@ using Search.Application.Catalog;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Linq;
-using Search.Application.Querying.Validation;
 using Search.Domain.Catalog.Products;
 using Search.Domain.Catalog.Products.ValueObjects;
 using Search.Domain.Catalog.Tags;
@@ -21,12 +19,12 @@ public sealed class ProductsController : ControllerBase
     private const string AuditUser = "api@we-byte.it";
 
     private readonly IProductRepository _repository;
-    private readonly DbBackedSearchMapProvider _searchMaps;
+    private readonly ISearchService _search;
 
-    public ProductsController(IProductRepository repository, DbBackedSearchMapProvider searchMaps)
+    public ProductsController(IProductRepository repository, ISearchService search)
     {
         _repository = repository;
-        _searchMaps = searchMaps;
+        _search = search;
     }
 
     /// <summary>Crea un prodotto (accetta dimensioni e tag).</summary>
@@ -64,6 +62,7 @@ public sealed class ProductsController : ControllerBase
         product.ChangePrice(Money.Of(request.Price, request.Currency));
         product.UpdateDetails(request.Description, request.Category, ProductMappings.ToDomain(request.Dimensions), request.WeightInGrams);
         product.ApplyModificationAudit(AuditUser, DateTimeOffset.UtcNow);
+        _repository.Save();
 
         return Ok(ProductMappings.ToDetails(product));
     }
@@ -87,6 +86,7 @@ public sealed class ProductsController : ControllerBase
         }
 
         product.ApplyModificationAudit(AuditUser, DateTimeOffset.UtcNow);
+        _repository.Save();
         return Ok(ProductMappings.ToDetails(product));
     }
 
@@ -112,17 +112,9 @@ public sealed class ProductsController : ControllerBase
             SimulatedFieldDefinitionDatabase.DemoSpace,
             new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
 
-        var map = _searchMaps.GetEffectiveMap("product", caller);
-        var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
-        new SearchRequestValidator(map).Validate(sanitized);
-        var result = new LinqSearchExecutor<Product>(map).Execute(_repository.Query(), sanitized);
+        // Il controller non sa quale store gira sotto: chiede la ricerca su "product" al facade e basta.
+        var result = _search.Search("product", request, caller);
 
-        return Ok(new
-        {
-            items = result.Items,
-            totalCount = result.TotalCount,
-            pageNumber = result.PageNumber,
-            pageSize = result.PageSize
-        });
+        return Ok(new { result.Items, result.TotalCount, result.PageNumber, result.PageSize });
     }
 }
