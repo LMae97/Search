@@ -42,11 +42,13 @@ builder.Services.AddSingleton<DbBackedSearchMapProvider>();
 
 // --- Layer di ricerca: un handler per entità/store, dietro un facade unico (ISearchService) ---
 // product = SQL grezzo (PostgresRaw). Aggiungere un'entità = registrare un altro ISearchHandler.
+builder.Services.AddSingleton<SqlSearchExecutor>(); // riceve ILogger<SqlSearchExecutor> → logga SQL + parametri
 builder.Services.AddSingleton<ISearchHandler>(sp => new SqlSearchHandler(
     "product",
     sp.GetRequiredService<DbBackedSearchMapProvider>(),
     sp.GetRequiredService<ISqlSchemaProvider>(),
-    sp.GetRequiredService<ICatalogConnectionFactory>()));
+    sp.GetRequiredService<ICatalogConnectionFactory>(),
+    sp.GetRequiredService<SqlSearchExecutor>()));
 builder.Services.AddSingleton<ISearchService, SearchService>();
 
 var app = builder.Build();

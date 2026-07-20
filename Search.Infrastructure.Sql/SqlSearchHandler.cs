@@ -13,12 +13,12 @@ public sealed class SqlSearchHandler(
     string entityName,
     DbBackedSearchMapProvider maps,
     ISqlSchemaProvider schemas,
-    ICatalogConnectionFactory connections) : SearchHandlerBase(entityName, maps)
+    ICatalogConnectionFactory connections,
+    SqlSearchExecutor executor) : SearchHandlerBase(entityName, maps)
 {
     protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(IEntitySearchMap map, SearchRequest request)
     {
         var builder = new SqlSearchQueryBuilder(map, schemas.GetSchema(EntityName));
-        var executor = new SqlSearchExecutor();
 
         using var connection = connections.Create();
         connection.Open();

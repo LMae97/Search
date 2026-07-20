@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Microsoft.Extensions.Logging;
 
 namespace Search.Infrastructure.Sql;
 
@@ -6,8 +7,12 @@ namespace Search.Infrastructure.Sql;
 /// Esegue un <see cref="SqlQueryPlan"/> parametrizzato su una qualsiasi connessione ADO.NET
 /// (SQLite nello spike, Postgres/Npgsql in produzione). Nessun ORM, nessun modello: le righe tornano
 /// come dizionari campo→valore, coerenti con gli altri executor.
+/// <para>
+/// Se gli viene passato un <see cref="ILogger"/> logga l'SQL e i parametri di ogni comando (come il
+/// command-logging di EF). Il livello si regola per categoria in appsettings (<c>Search.Infrastructure.Sql.SqlSearchExecutor</c>).
+/// </para>
 /// </summary>
-public sealed class SqlSearchExecutor
+public sealed class SqlSearchExecutor(ILogger<SqlSearchExecutor>? logger = null)
 {
     /// <summary>Esegue la query dati e mappa ogni riga in un dizionario per nome-campo (l'alias del SELECT).</summary>
     public IReadOnlyList<IReadOnlyDictionary<string, object?>> Query(DbConnection connection, SqlQueryPlan plan)
@@ -34,7 +39,7 @@ public sealed class SqlSearchExecutor
     }
 
     // I valori sono SEMPRE legati come parametri: mai concatenati nel testo (niente SQL injection).
-    private static DbCommand CreateCommand(DbConnection connection, SqlQueryPlan plan)
+    private DbCommand CreateCommand(DbConnection connection, SqlQueryPlan plan)
     {
         var command = connection.CreateCommand();
         command.CommandText = plan.Sql;
@@ -45,6 +50,17 @@ public sealed class SqlSearchExecutor
             parameter.Value = value ?? DBNull.Value;
             command.Parameters.Add(parameter);
         }
+
+        // NB: logga anche i VALORI dei parametri (comodo in dev; in prod valuta un livello più alto o di
+        //     oscurarli, come fa EF con EnableSensitiveDataLogging).
+        logger?.LogInformation("SqlSearchExecutor esegue:\n{Sql}\n-- parametri: {Parameters}",
+            plan.Sql, FormatParameters(plan.Parameters));
+
         return command;
     }
+
+    private static string FormatParameters(IReadOnlyDictionary<string, object?> parameters)
+        => parameters.Count == 0
+            ? "(nessuno)"
+            : string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value ?? "NULL"}"));
 }
