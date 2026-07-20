@@ -12,7 +12,7 @@ namespace Search.Infrastructure.Sql;
 /// command-logging di EF). Il livello si regola per categoria in appsettings (<c>Search.Infrastructure.Sql.SqlSearchExecutor</c>).
 /// </para>
 /// </summary>
-public sealed class SqlSearchExecutor(ILogger<SqlSearchExecutor>? logger = null)
+public sealed class SqlSearchExecutor()
 {
     /// <summary>Esegue la query dati e mappa ogni riga in un dizionario per nome-campo (l'alias del SELECT).</summary>
     public IReadOnlyList<IReadOnlyDictionary<string, object?>> Query(DbConnection connection, SqlQueryPlan plan)
@@ -53,8 +53,8 @@ public sealed class SqlSearchExecutor(ILogger<SqlSearchExecutor>? logger = null)
 
         // NB: logga anche i VALORI dei parametri (comodo in dev; in prod valuta un livello più alto o di
         //     oscurarli, come fa EF con EnableSensitiveDataLogging).
-        logger?.LogInformation("SqlSearchExecutor esegue:\n{Sql}\n-- parametri: {Parameters}",
-            plan.Sql, FormatParameters(plan.Parameters));
+        //logger?.LogInformation("SqlSearchExecutor esegue:\n{Sql}\n-- parametri: {Parameters}",
+        //    plan.Sql, FormatParameters(plan.Parameters));
 
         return command;
     }

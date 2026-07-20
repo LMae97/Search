@@ -5,20 +5,21 @@ using Search.Application.Querying.Metadata;
 namespace Search.Infrastructure.Sql;
 
 /// <summary>
-/// Handler di ricerca per le entità dello store <b>PostgresRaw</b> (parametrizzato per nome: vale per
-/// product, brand, …). Traduce l'albero in SQL testuale parametrizzato ed esegue via ADO.NET. La pipeline
-/// comune (permessi/potatura/validazione) è nella base; qui c'è solo l'esecuzione.
+/// Handler di ricerca per lo store <b>PostgresRaw</b>: serve <b>tutte</b> le entità di quello store
+/// (product, brand, …), risolvendo schema e mappa per nome a runtime. Traduce l'albero in SQL testuale
+/// parametrizzato ed esegue via ADO.NET. La pipeline comune (permessi/potatura/validazione) è nella base.
 /// </summary>
 public sealed class SqlSearchHandler(
-    string entityName,
     DbBackedSearchMapProvider maps,
     ISqlSchemaProvider schemas,
-    ICatalogConnectionFactory connections,
-    SqlSearchExecutor executor) : SearchHandlerBase(entityName, maps)
+    ICatalogConnectionFactory connections) : SearchHandlerBase(maps)
 {
-    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(IEntitySearchMap map, SearchRequest request)
+    public override StoreKind Store => StoreKind.PostgresRaw;
+
+    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request)
     {
-        var builder = new SqlSearchQueryBuilder(map, schemas.GetSchema(EntityName));
+        var builder = new SqlSearchQueryBuilder(map, schemas.GetSchema(entityName));
+        var executor = new SqlSearchExecutor();
 
         using var connection = connections.Create();
         connection.Open();

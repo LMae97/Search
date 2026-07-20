@@ -40,15 +40,15 @@ builder.Services.AddSingleton<ISearchFieldDefinitionProvider>(_ => SimulatedFiel
 builder.Services.AddSingleton<SearchFieldDefinitionResolver>();
 builder.Services.AddSingleton<DbBackedSearchMapProvider>();
 
-// --- Layer di ricerca: un handler per entità/store, dietro un facade unico (ISearchService) ---
-// product = SQL grezzo (PostgresRaw). Aggiungere un'entità = registrare un altro ISearchHandler.
-builder.Services.AddSingleton<SqlSearchExecutor>(); // riceve ILogger<SqlSearchExecutor> → logga SQL + parametri
-builder.Services.AddSingleton<ISearchHandler>(sp => new SqlSearchHandler(
-    "product",
-    sp.GetRequiredService<DbBackedSearchMapProvider>(),
-    sp.GetRequiredService<ISqlSchemaProvider>(),
-    sp.GetRequiredService<ICatalogConnectionFactory>(),
-    sp.GetRequiredService<SqlSearchExecutor>()));
+// --- Layer di ricerca: un handler per STORE, dietro un facade unico (ISearchService) ---
+// Il facade smista per StoreKind (dal SearchEntityRegistry): un handler serve tutte le entità del suo store.
+builder.Services.AddSingleton<ISearchHandler, SqlSearchHandler>();   // copre tutte le entità PostgresRaw (product, brand, …)
+// Mongo: da abilitare quando l'API avrà una connessione Mongo (+ riferimento a Search.Infrastructure.Mongo). Servono:
+//   builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnectionString));
+//   builder.Services.AddSingleton(sp => sp.GetRequiredService<IMongoClient>().GetDatabase("<db>"));
+//   builder.Services.AddSingleton<IMongoCollectionProvider>(sp => new MongoCollectionProvider(
+//       sp.GetRequiredService<IMongoDatabase>(), new Dictionary<string, string> { ["order"] = "orders" }));
+//   builder.Services.AddSingleton<ISearchHandler, MongoSearchHandler>();
 builder.Services.AddSingleton<ISearchService, SearchService>();
 
 var app = builder.Build();
