@@ -21,8 +21,8 @@ public sealed class Brand : AggregateRoot<Guid>
     /// <summary>Paese d'origine, ISO 3166-1 alpha-2 (es. "IT").</summary>
     public string? CountryOfOrigin { get; private set; }
 
-    public Uri? Website { get; private set; }
-    public Uri? LogoUrl { get; private set; }
+    public string? Website { get; private set; }
+    public string? LogoUrl { get; private set; }
     public bool IsActive { get; private set; }
 
     /// <summary>
@@ -49,8 +49,8 @@ public sealed class Brand : AggregateRoot<Guid>
         string code,
         string? description = null,
         string? countryOfOrigin = null,
-        Uri? website = null,
-        Uri? logoUrl = null)
+        string? website = null,
+        string? logoUrl = null)
     {
         var brand = new Brand(Guid.NewGuid(), NormalizeName(name), NormalizeCode(code))
         {
@@ -71,7 +71,7 @@ public sealed class Brand : AggregateRoot<Guid>
         Name = normalized;
     }
 
-    public void UpdateDetails(string? description, string? countryOfOrigin, Uri? website, Uri? logoUrl)
+    public void UpdateDetails(string? description, string? countryOfOrigin, string? website, string? logoUrl)
     {
         Description = description?.Trim();
         CountryOfOrigin = NormalizeCountry(countryOfOrigin);

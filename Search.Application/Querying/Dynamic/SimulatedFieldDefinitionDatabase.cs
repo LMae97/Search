@@ -49,7 +49,9 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("product", "name", FieldKind.String, false, "\"product\".\"Name\""));
         rows.Add(new SearchFieldDefinition("product", "description", FieldKind.String, false, "\"product\".\"Description\""));
         rows.Add(new SearchFieldDefinition("product", "brandId", FieldKind.Guid, false, "\"product\".\"BrandId\"", Label: "Marca"));
-        //brandName: aspettiamo
+        // brandName: colonna di Brands; il LEFT JOIN sull'alias "brand" vive nel From dello schema SQL
+        // (CatalogSqlSchemaProvider), quindi qui è un semplice riferimento di colonna.
+        rows.Add(new SearchFieldDefinition("product", "brandName", FieldKind.String, false, "\"brand\".\"Name\"", Label: "Marca"));
         //price: aspettiamo
         rows.Add(new SearchFieldDefinition("product", "stockQuantity", FieldKind.Integer, false, "\"product\".\"StockQuantity\"", Label: "Quantità in stock", Section: "Economici"));
         rows.Add(new SearchFieldDefinition("product", "status", FieldKind.Enum, false, "\"product\".\"Status\""));

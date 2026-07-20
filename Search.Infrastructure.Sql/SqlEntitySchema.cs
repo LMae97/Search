@@ -10,14 +10,34 @@ namespace Search.Infrastructure.Sql;
 /// <param name="BasePredicate">
 /// Predicato sempre applicato in AND al filtro utente (es. soft-delete <c>NOT ("brand"."IsDeleted")</c>). Null = nessuno.
 /// </param>
-public sealed record SqlEntitySchema(string From, string? BasePredicate = null)
+/// <param name="ArrayMappings">
+/// Per i campi array/collezione: come diventano EXISTS/aggregazioni correlati (vedi <see cref="SqlArrayMapping"/>),
+/// per nome-campo pubblico. Vuoto se l'entità non ha collezioni ricercabili.
+/// </param>
+public sealed class SqlEntitySchema
 {
+    public string From { get; private set; }
+    public string? BasePredicate { get; private set; }
+    public IReadOnlyDictionary<string, SqlArrayMapping> CollectionJoins { get; private set; }
+
     /// <summary>
-    /// Per i campi array/collezione: come diventano EXISTS/aggregazioni correlati (vedi <see cref="SqlArrayMapping"/>),
-    /// per nome-campo pubblico. Vuoto se l'entità non ha collezioni ricercabili.
+    /// Join OPZIONALI per-campo scalare: nome-campo → clausola JOIN. Il builder li aggiunge al FROM
+    /// <b>solo se</b> il campo è usato (proiezione/filtro/sort) e li deduplica (più campi possono condividere
+    /// lo stesso join). Es. <c>"brandName" → LEFT JOIN "Brands" AS "brand" …</c>.
     /// </summary>
-    public IReadOnlyDictionary<string, SqlArrayMapping> ArrayMappings { get; init; }
-        = new Dictionary<string, SqlArrayMapping>();
+    public IReadOnlyDictionary<string, string> ScalarJoins { get; private set; }
+
+    public SqlEntitySchema(
+        string from,
+        string? basePredicate = null,
+        IReadOnlyDictionary<string, SqlArrayMapping>? collectionJoins = null,
+        IReadOnlyDictionary<string, string>? scalarJoins = null)
+    {
+        From = from;
+        BasePredicate = basePredicate;
+        CollectionJoins = collectionJoins ?? new Dictionary<string, SqlArrayMapping>();
+        ScalarJoins = scalarJoins ?? new Dictionary<string, string>();
+    }
 }
 
 /// <summary>

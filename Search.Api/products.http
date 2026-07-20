@@ -63,11 +63,12 @@ Content-Type: {{contentType}}
 {
   "filter": {
     "and": [
+      { "field": "brandName", "op": "eq", "value": "Lorenzo" },
       { "field": "price", "op": "gte", "value": 10 },
       { "field": "tags", "op": "containsAny", "values": ["sale", "novità"] }
     ]
   },
-  "projection": ["name", "price", "tags", "priceAmount"],
+  "projection": ["name", "brandName", "price", "tags", "priceAmount"],
   "sort": [{ "field": "price", "direction": "Descending" }],
   "page": { "number": 1, "size": 20 }
 }

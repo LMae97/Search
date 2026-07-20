@@ -15,26 +15,12 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         _ => throw new InvalidOperationException($"Nessuna configurazione SQL per l'entità '{entityName}'.")
     };
 
-    private static readonly SqlEntitySchema Product = new(
-        From: "FROM \"Products\" AS \"product\"",
-        BasePredicate: "NOT (\"product\".\"IsDeleted\")") // soft-delete: sempre in AND col filtro utente
-    {
-        ArrayMappings = new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
-        {
-            // Postgres: proiezione via array_agg (json_group_array è SQLite). COALESCE → array vuoto se nessun tag.
-            ["tags"] = new SqlArrayMapping(ProductTagJoin, "\"tag\".\"Name\"",
-                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) {ProductTagJoin})"),
-            ["tagIds"] = new SqlArrayMapping(ProductTagJoin, "\"tag\".\"Id\"",
-                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) {ProductTagJoin})"),
-        }
-    };
 
     // brand → tabella "Brands" (alias "brand"), soft-delete su IsDeleted, tag via tabella ponte "BrandTag".
     private static readonly SqlEntitySchema Brand = new(
-        From: "FROM \"Brands\" AS \"brand\"",
-        BasePredicate: "NOT (\"brand\".\"IsDeleted\")") // soft-delete: sempre in AND col filtro utente
-    {
-        ArrayMappings = new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
+        from: "FROM \"Brands\" AS \"brand\"",
+        basePredicate: "NOT (\"brand\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
+        collectionJoins: new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
         {
             ["tags"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Name\""),
             ["tagIds"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Id\""),
@@ -43,9 +29,8 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
             ["dataTags"] = new SqlArrayMapping(
                 From: "FROM jsonb_array_elements_text(coalesce(\"brand\".\"Data\" -> 'tags','[]'::jsonb)) AS elem WHERE true",
                 ElementColumn: "elem",
-                Projection: "\"brand\".\"Data\" -> 'tags'"),
-        }
-    };
+                Projection: "\"brand\".\"Data\" -> 'tags'")
+        });
 
     // Correlazione col padre inclusa: è tutto ciò che segue "SELECT 1" nell'EXISTS (filtro) e nell'aggregazione
     // json_group_array (proiezione). Un'unica definizione riusata da entrambi.
@@ -59,6 +44,25 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         WHERE "brand"."Id" = "bt"."BrandId"
         """;
 
+    private static readonly SqlEntitySchema Product = new(
+    from: "FROM \"Products\" AS \"product\"",
+    basePredicate: "NOT (\"product\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
+    scalarJoins: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["brandName"] = "LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"product\".\"BrandId\"",
+    },
+    collectionJoins: new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["tags"] = new SqlArrayMapping(
+            From: ProductTagJoin, 
+            ElementColumn: "\"tag\".\"Name\"",
+            Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) {ProductTagJoin})"),
+        ["tagIds"] = new SqlArrayMapping(
+            From: ProductTagJoin,
+            ElementColumn: "\"tag\".\"Id\"",
+            Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) {ProductTagJoin})"),
+    });
+
     private const string ProductTagJoin = """
         FROM "ProductTag" AS "pt"
         INNER JOIN (
@@ -68,5 +72,4 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         ) AS "tag" ON "pt"."TagsId" = "tag"."Id"
         WHERE "product"."Id" = "pt"."ProductId"
         """;
-
 }

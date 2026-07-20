@@ -20,7 +20,7 @@ public sealed class SqlSearchQueryBuilder
     {
         _map = map;
         _schema = schema;
-        _filter = new SqlFilterTranslator(map, schema.ArrayMappings);
+        _filter = new SqlFilterTranslator(map, schema.CollectionJoins);
     }
 
     /// <summary>Query dati: <c>SELECT … FROM … WHERE … ORDER BY … LIMIT/OFFSET</c>.</summary>
@@ -30,6 +30,8 @@ public sealed class SqlSearchQueryBuilder
         var parameters = new Dictionary<string, object?>();
 
         var select = string.Join(",\n       ", names.Select(SelectColumn));
+        // FROM con i soli join richiesti dai campi effettivamente usati (proiezione ∪ filtro ∪ sort).
+        var from = BuildFrom(names.Concat(FilterFields(request.Filter)).Concat(request.Sort.Select(sort => sort.Field)));
         var where = BuildWhere(request.Filter, parameters);
         var orderBy = BuildOrderBy(request.Sort);
 
@@ -39,7 +41,7 @@ public sealed class SqlSearchQueryBuilder
 
         var sql =
             $"SELECT {select}\n" +
-            $"{_schema.From}\n" +
+            $"{from}\n" +
             where +
             orderBy +
             "LIMIT @take OFFSET @skip";
@@ -52,12 +54,37 @@ public sealed class SqlSearchQueryBuilder
     {
         var parameters = new Dictionary<string, object?>();
         var where = BuildWhere(request.Filter, parameters);
-        var sql = $"SELECT COUNT(*)\n{_schema.From}\n{where}".TrimEnd();
+        // Il COUNT non proietta né ordina: servono solo i join richiesti dai campi del filtro.
+        var from = BuildFrom(FilterFields(request.Filter));
+        var sql = $"SELECT COUNT(*)\n{from}\n{where}".TrimEnd();
         return new SqlQueryPlan(sql, parameters);
     }
 
     private IReadOnlyList<string> ResolveProjection(IReadOnlyList<string> projection) =>
         projection.Count == 0 ? _map.DefaultProjection() : projection.ToList();
+
+    // FROM base + i soli join dei campi usati (deduplicati). Come l'EXISTS dei tag: si paga solo se serve.
+    private string BuildFrom(IEnumerable<string> usedFields)
+    {
+        if (_schema.ScalarJoins.Count == 0)
+            return _schema.From;
+
+        var joins = usedFields
+            .Where(_schema.ScalarJoins.ContainsKey)
+            .Select(field => _schema.ScalarJoins[field])
+            .Distinct()
+            .ToList();
+
+        return joins.Count == 0 ? _schema.From : $"{_schema.From}\n{string.Join("\n", joins)}";
+    }
+
+    // Nomi dei campi referenziati dall'albero di filtri (per sapere quali join servono al WHERE).
+    private static IEnumerable<string> FilterFields(FilterNode? node) => node switch
+    {
+        ComparisonFilterNode comparison => [comparison.Field],
+        LogicalFilterNode logical => logical.Children.SelectMany(FilterFields),
+        _ => []
+    };
 
     private string SelectColumn(string name)
     {
@@ -70,7 +97,7 @@ public sealed class SqlSearchQueryBuilder
         // Campo array/collezione, due "facce" (vedi SqlArrayMapping):
         //  - M2M (junction): niente Projection → RICOSTRUISCE l'array con json_group_array sullo stesso join del filtro.
         //  - JSON (jsonb): la colonna È già un array → Projection diretta (es. "brand"."Data" -> 'tags').
-        if (!_schema.ArrayMappings.TryGetValue(name, out var join))
+        if (!_schema.CollectionJoins.TryGetValue(name, out var join))
             throw new NotSupportedException($"Il campo array '{name}' non ha una mappatura di collezione SQL (SqlArrayMapping).");
         var projection = join.Projection ?? $"(SELECT json_group_array({join.ElementColumn}) {join.From})";
         return $"{projection} AS \"{name}\"";

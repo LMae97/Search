@@ -287,7 +287,7 @@ var brandFilter = Filter.And(
     Filter.Contains("code", "acme"),
     Filter.ArrayContainsAny("tags", "sale", "novità"));
 
-var brandSql = new SqlFilterTranslator(brandMap, brandSchema.ArrayMappings).Translate(brandFilter);
+var brandSql = new SqlFilterTranslator(brandMap, brandSchema.CollectionJoins).Translate(brandFilter);
 Console.WriteLine("WHERE " + brandSql.Sql);
 for (var i = 0; i < brandSql.Parameters.Count; i++)
     Console.WriteLine($"   @p{i} = {FormatValue(brandSql.Parameters[i])}");
