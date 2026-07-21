@@ -30,14 +30,7 @@ builder.Services.AddScoped<IProductRepository, EfProductRepository>();          
 builder.Services.AddSingleton<ICatalogConnectionFactory>(new NpgsqlCatalogConnectionFactory(catalogConnectionString)); // ricerca raw
 builder.Services.AddSingleton<ISqlSchemaProvider, CatalogSqlSchemaProvider>();
 
-// --- Motore di ricerca (definizioni "a DB"): product = SQL grezzo (PostgresRaw), order = Mongo ---
-builder.Services.AddSingleton(new SearchEntityRegistry(
-[
-    SearchEntity.RelationalRaw("product"),
-    SearchEntity.Document("order")
-]));
 builder.Services.AddSingleton<ISearchFieldDefinitionProvider>(_ => SimulatedFieldDefinitionDatabase.Create());
-builder.Services.AddSingleton<SearchFieldDefinitionResolver>();
 builder.Services.AddSingleton<DbBackedSearchMapProvider>();
 
 // --- Layer di ricerca: un handler per STORE, dietro un facade unico (ISearchService) ---

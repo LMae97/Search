@@ -13,14 +13,14 @@ public sealed class SearchRequestSanitizer
 {
     private readonly IEntitySearchMap _map;
 
-    public SearchRequestSanitizer(IEntitySearchMap effectiveMap) => _map = effectiveMap;
+    public SearchRequestSanitizer(IEntitySearchMap effectiveMap)
+    {
+        _map = effectiveMap;
+    }
 
     public SearchRequest Sanitize(SearchRequest request)
     {
         var projection = request.Projection.Where(IsKnown).ToList();
-        if (projection.Count == 0)
-            // Proiezione vuota (o interamente potata) ⇒ i campi visibili di default (regola condivisa).
-            projection = _map.DefaultProjection().ToList();
 
         return new SearchRequest
         {

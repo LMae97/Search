@@ -160,6 +160,10 @@ public sealed class SqlFilterTranslator
 /// <summary>Frammento SQL parametrizzato: la clausola (senza <c>WHERE</c>) e i valori dei parametri (<c>@p0..@pN</c>).</summary>
 public sealed record SqlFilter(string Sql, IReadOnlyList<object?> Parameters);
 
+public abstract record SqlJoin;
+
+public sealed record SqlSimpleJoin(string Condition) : SqlJoin;
+
 /// <summary>
 /// Come un campo array (collezione M2M) diventa un <c>EXISTS</c> correlato in SQL. Vive nell'adapter SQL,
 /// non nei metadati store-agnostic: la forma relazionale — tabella ponte, chiavi, correlazione — è un
@@ -172,4 +176,4 @@ public sealed record SqlFilter(string Sql, IReadOnlyList<object?> Parameters);
 /// Come proiettare l'intero array nel <c>SELECT</c>. <c>null</c> ⇒ lo si RICOSTRUISCE con <c>json_group_array(ElementColumn)</c>
 /// sullo stesso join (caso M2M). Valorizzato ⇒ espressione diretta (es. <c>"brand"."Data" -> 'tags'</c>: la colonna JSON È già l'array).
 /// </param>
-public sealed record SqlArrayMapping(string From, string ElementColumn, string? Projection = null);
+public sealed record SqlArrayMapping(string From, string ElementColumn, string? Projection = null) : SqlJoin;

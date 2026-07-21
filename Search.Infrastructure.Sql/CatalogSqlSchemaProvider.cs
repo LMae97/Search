@@ -20,12 +20,10 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     private static readonly SqlEntitySchema Brand = new(
         from: "FROM \"Brands\" AS \"brand\"",
         basePredicate: "NOT (\"brand\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
-        collectionJoins: new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
+        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
-            ["tags"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Name\""),
-            ["tagIds"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Id\""),
-            // JSON: array inline nella colonna "Data". Filtro via unnest (EXISTS); proiezione diretta (la
-            // colonna È già l'array → niente json_group_array). coalesce → nessun errore se la chiave manca.
+            ["tags"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Name\"", "SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) " + BrandTagJoin),
+            ["tagIds"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Id\"", "SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) " + BrandTagJoin),
             ["dataTags"] = new SqlArrayMapping(
                 From: "FROM jsonb_array_elements_text(coalesce(\"brand\".\"Data\" -> 'tags','[]'::jsonb)) AS elem WHERE true",
                 ElementColumn: "elem",
@@ -47,12 +45,9 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     private static readonly SqlEntitySchema Product = new(
     from: "FROM \"Products\" AS \"product\"",
     basePredicate: "NOT (\"product\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
-    scalarJoins: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
     {
-        ["brandName"] = "LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"product\".\"BrandId\"",
-    },
-    collectionJoins: new Dictionary<string, SqlArrayMapping>(StringComparer.OrdinalIgnoreCase)
-    {
+        ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"product\".\"BrandId\""),
         ["tags"] = new SqlArrayMapping(
             From: ProductTagJoin, 
             ElementColumn: "\"tag\".\"Name\"",

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Search.Api.Contracts;
 using Search.Application.Catalog;
+using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
@@ -112,8 +113,10 @@ public sealed class ProductsController : ControllerBase
             SimulatedFieldDefinitionDatabase.DemoSpace,
             new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
 
+        var entityConfig = new ProductEntityConfig();
+
         // Il controller non sa quale store gira sotto: chiede la ricerca su "product" al facade e basta.
-        var result = _search.Search("product", request, caller);
+        var result = _search.Search(entityConfig, request, caller);
 
         return Ok(new { result.Items, result.TotalCount, result.PageNumber, result.PageSize });
     }

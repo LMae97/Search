@@ -13,20 +13,21 @@ namespace Search.Application.Querying.Dynamic;
 public sealed class DbBackedSearchMapProvider
 {
     private readonly ISearchFieldDefinitionProvider _definitions;
-    private readonly SearchFieldDefinitionResolver _resolver;
 
-    public DbBackedSearchMapProvider(ISearchFieldDefinitionProvider definitions, SearchFieldDefinitionResolver resolver)
+    public DbBackedSearchMapProvider(ISearchFieldDefinitionProvider definitions)
     {
         _definitions = definitions;
-        _resolver = resolver;
     }
 
-    public IEntitySearchMap GetEffectiveMap(string entityName, SearchCaller caller)
+    public IEntitySearchMap GetEffectiveMap(SearchEntity entity, SearchCaller caller)
     {
-        var descriptors = _definitions
-            .GetDefinitions(entityName, caller.SpaceId)
-            .Select(_resolver.Resolve);
+        var resolver = new SearchFieldDefinitionResolver(entity);
 
-        return EffectiveSearchMap.For(entityName, descriptors, caller);
+        var descriptors = _definitions
+            .GetDefinitions(entity.Name, caller.SpaceId)
+            .Select(resolver.Resolve);
+
+        //Costruisce la mappa (filtrando per permessi)
+        return EffectiveSearchMap.For(entity.Name, descriptors, caller);
     }
 }

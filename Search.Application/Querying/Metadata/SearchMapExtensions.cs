@@ -4,6 +4,7 @@ namespace Search.Application.Querying.Metadata;
 /// Helper condivisi sulla mappa dei campi, per non duplicare due regole trasversali nei tre store:
 /// la <b>proiezione di default</b> e il <b>campo di ordinamento di default</b> (paginazione deterministica).
 /// </summary>
+
 public static class SearchMapExtensions
 {
     /// <summary>Nomi dei campi visibili di default, usati quando la proiezione richiesta è vuota.</summary>

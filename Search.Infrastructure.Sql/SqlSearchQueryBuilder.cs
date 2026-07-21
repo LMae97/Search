@@ -13,14 +13,14 @@ namespace Search.Infrastructure.Sql;
 public sealed class SqlSearchQueryBuilder
 {
     private readonly IEntitySearchMap _map;
-    private readonly SqlEntitySchema _schema;    // config SQL dell'entità: FROM base, soft-delete, join collezioni
+    private readonly SqlEntitySchema _schema;     // config SQL dell'entità: FROM base, soft-delete, join collezioni
     private readonly SqlFilterTranslator _filter;
 
     public SqlSearchQueryBuilder(IEntitySearchMap map, SqlEntitySchema schema)
     {
         _map = map;
         _schema = schema;
-        _filter = new SqlFilterTranslator(map, schema.CollectionJoins);
+        _filter = new SqlFilterTranslator(map, schema.GetManyToManyJoins());
     }
 
     /// <summary>Query dati: <c>SELECT … FROM … WHERE … ORDER BY … LIMIT/OFFSET</c>.</summary>
@@ -61,17 +61,19 @@ public sealed class SqlSearchQueryBuilder
     }
 
     private IReadOnlyList<string> ResolveProjection(IReadOnlyList<string> projection) =>
-        projection.Count == 0 ? _map.DefaultProjection() : projection.ToList();
+        projection.Count == 0 ? [] : projection.ToList();
 
     // FROM base + i soli join dei campi usati (deduplicati). Come l'EXISTS dei tag: si paga solo se serve.
     private string BuildFrom(IEnumerable<string> usedFields)
     {
-        if (_schema.ScalarJoins.Count == 0)
+        if (_schema.GetSimpleJoins().Count == 0)
             return _schema.From;
 
+        var scalarJoins = _schema.GetSimpleJoins();
+
         var joins = usedFields
-            .Where(_schema.ScalarJoins.ContainsKey)
-            .Select(field => _schema.ScalarJoins[field])
+            .Where(scalarJoins.ContainsKey)
+            .Select(field => scalarJoins[field].Condition)
             .Distinct()
             .ToList();
 
@@ -97,7 +99,7 @@ public sealed class SqlSearchQueryBuilder
         // Campo array/collezione, due "facce" (vedi SqlArrayMapping):
         //  - M2M (junction): niente Projection → RICOSTRUISCE l'array con json_group_array sullo stesso join del filtro.
         //  - JSON (jsonb): la colonna È già un array → Projection diretta (es. "brand"."Data" -> 'tags').
-        if (!_schema.CollectionJoins.TryGetValue(name, out var join))
+        if (!_schema.GetManyToManyJoins().TryGetValue(name, out var join))
             throw new NotSupportedException($"Il campo array '{name}' non ha una mappatura di collezione SQL (SqlArrayMapping).");
         var projection = join.Projection ?? $"(SELECT json_group_array({join.ElementColumn}) {join.From})";
         return $"{projection} AS \"{name}\"";

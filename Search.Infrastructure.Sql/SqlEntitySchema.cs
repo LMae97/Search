@@ -18,26 +18,27 @@ public sealed class SqlEntitySchema
 {
     public string From { get; private set; }
     public string? BasePredicate { get; private set; }
-    public IReadOnlyDictionary<string, SqlArrayMapping> CollectionJoins { get; private set; }
-
-    /// <summary>
-    /// Join OPZIONALI per-campo scalare: nome-campo → clausola JOIN. Il builder li aggiunge al FROM
-    /// <b>solo se</b> il campo è usato (proiezione/filtro/sort) e li deduplica (più campi possono condividere
-    /// lo stesso join). Es. <c>"brandName" → LEFT JOIN "Brands" AS "brand" …</c>.
-    /// </summary>
-    public IReadOnlyDictionary<string, string> ScalarJoins { get; private set; }
+    private readonly IReadOnlyDictionary<string, SqlJoin> Joins;
 
     public SqlEntitySchema(
         string from,
         string? basePredicate = null,
-        IReadOnlyDictionary<string, SqlArrayMapping>? collectionJoins = null,
-        IReadOnlyDictionary<string, string>? scalarJoins = null)
+        IReadOnlyDictionary<string, SqlJoin>? joins = null)
     {
         From = from;
         BasePredicate = basePredicate;
-        CollectionJoins = collectionJoins ?? new Dictionary<string, SqlArrayMapping>();
-        ScalarJoins = scalarJoins ?? new Dictionary<string, string>();
+        Joins = joins ?? new Dictionary<string, SqlJoin>();
     }
+
+    public IReadOnlyDictionary<string, SqlArrayMapping> GetManyToManyJoins()
+        => Joins
+            .Where(kv => kv.Value is SqlArrayMapping)
+            .ToDictionary(kv => kv.Key, kv => (SqlArrayMapping)kv.Value);
+
+    public IReadOnlyDictionary<string, SqlSimpleJoin> GetSimpleJoins()
+        => Joins
+            .Where(kv => kv.Value is SqlSimpleJoin)
+            .ToDictionary(kv => kv.Key, kv => (SqlSimpleJoin)kv.Value);
 }
 
 /// <summary>

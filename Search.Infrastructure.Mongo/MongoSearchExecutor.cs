@@ -61,7 +61,7 @@ public sealed class MongoSearchExecutor<TDocument>
 
     private (BsonDocument Projection, IReadOnlyList<(string Name, string Path)> Fields) BuildProjection(IReadOnlyList<string> projection)
     {
-        var names = projection.Count == 0 ? _map.DefaultProjection() : projection;
+        var names = projection.Count == 0 ? [] : projection;
 
         var document = new BsonDocument();
         var fields = new List<(string Name, string Path)>();

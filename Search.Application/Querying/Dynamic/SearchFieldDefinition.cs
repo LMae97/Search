@@ -18,6 +18,7 @@ public sealed record SearchFieldDefinition(
     string Path,
     string? Label = null,
     string? Section = null,
-    bool VisibleByDefault = true,
+    int? DefaultOrder = null,           // proiezione -> ordine di proiezione fallback (null = non proiettato di default)
+    bool IsHidden = false,              // proiezione -> se il campo è nascosto (non proiettabile. Rimane filtrabile/ordinabile)
     Guid? RequiredPermissionId = null,
     Guid? SpaceId = null);

@@ -25,9 +25,7 @@ public sealed class FieldDescriptor
     /// È il ponte tra nome pubblico e proprietà reale (niente stringhe grezze verso il DB).
     /// <b>Null per i campi dinamici</b>, che non hanno una proprietà CLR e usano <see cref="StoragePath"/>.
     /// </summary>
-    public LambdaExpression? Selector { get; }
-
-    public IReadOnlySet<FilterOperator> AllowedOperators { get; }
+    public LambdaExpression? Selector { get; init; }
 
     /// <summary>
     /// Path esplicito nello store per i campi <b>dinamici</b> (es. "attributes.zonaConsegna" su Mongo).
@@ -35,37 +33,90 @@ public sealed class FieldDescriptor
     /// </summary>
     public string? StoragePath { get; init; }
 
+    public IReadOnlySet<FilterOperator> AllowedOperators { get; }
+
     // --- Metadati di presentazione / autorizzazione (decorano il campo tecnico) ---
 
     /// <summary>Etichetta per il FE. Default = <see cref="Name"/>.</summary>
-    public string Label { get; init; } = string.Empty;
+    public string Label { get; } = string.Empty;
 
     /// <summary>Sezione/gruppo per la UI (opzionale).</summary>
-    public string? Section { get; init; }
+    public string? Section { get;}
 
-    /// <summary>Se il campo è mostrato di default in tabella. È presentazione, NON autorizzazione.</summary>
-    public bool VisibleByDefault { get; init; } = true;
+    /// <summary>Se il campo è mostrato come fallback in tabella. È presentazione, NON autorizzazione.</summary>
+    public int? DefaultOrder { get; }
+
+    /// <summary>Se il campo è nascosto (non proiettabile). È presentazione, NON autorizzazione.</summary>
+    public bool IsHidden { get; }
 
     /// <summary>
     /// Permesso richiesto per vedere/filtrare/ordinare il campo. Null = nessun permesso richiesto.
     /// Se l'utente non lo possiede, il campo sparisce dalla <c>EffectiveSearchMap</c>.
     /// </summary>
-    public Guid? RequiredPermissionId { get; init; }
+    public Guid? RequiredPermissionId { get; }
 
-    public FieldDescriptor(
+    private FieldDescriptor(
         string name,
         FieldKind kind,
         bool isArray,
         Type clrType,
-        LambdaExpression? selector,
+        string? label,
+        string? section,
+        int? defaultOrder,
+        bool isHidden,
+        Guid? requiredPermissionId,
         IReadOnlySet<FilterOperator> allowedOperators)
     {
         Name = name;
         Kind = kind;
         IsArray = isArray;
         ClrType = clrType;
-        Selector = selector;
+        Label = label ?? name;
+        Section = section;
+        DefaultOrder = defaultOrder;
+        IsHidden = isHidden;
+        RequiredPermissionId = requiredPermissionId;
         AllowedOperators = allowedOperators;
+    }
+
+    public static FieldDescriptor BuildPathBased(
+        string storagePath,
+        string name,
+        FieldKind kind,
+        bool isArray,
+        Type clrType,
+        string? label,
+        string? section,
+        int? defaultOrder,
+        bool isHidden,
+        Guid? requiredPermissionId,
+        IReadOnlySet<FilterOperator> allowedOperators)
+    {
+        return new FieldDescriptor(name, kind, isArray, clrType, label, section,
+            defaultOrder, isHidden, requiredPermissionId, allowedOperators)
+        {
+            StoragePath = storagePath
+        };
+    }
+
+    public static FieldDescriptor BuildSelectorBased(
+        LambdaExpression selector,
+        string name,
+        FieldKind kind,
+        bool isArray,
+        Type clrType,
+        string? label,
+        string? section,
+        int? defaultOrder,
+        bool isHidden,
+        Guid? requiredPermissionId,
+        IReadOnlySet<FilterOperator> allowedOperators)
+    {
+        return new FieldDescriptor(name, kind, isArray, clrType, label, section,
+            defaultOrder, isHidden, requiredPermissionId, allowedOperators)
+        {
+            Selector = selector
+        };
     }
 
     public bool Supports(FilterOperator op) => AllowedOperators.Contains(op);

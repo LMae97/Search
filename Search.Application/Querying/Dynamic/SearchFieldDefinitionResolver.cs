@@ -16,23 +16,21 @@ namespace Search.Application.Querying.Dynamic;
 /// </summary>
 public sealed class SearchFieldDefinitionResolver
 {
-    private readonly SearchEntityRegistry _entities;
+    private readonly SearchEntity _entity;
 
-    public SearchFieldDefinitionResolver(SearchEntityRegistry entities) => _entities = entities;
+    public SearchFieldDefinitionResolver(SearchEntity entity) => _entity = entity;
 
     public FieldDescriptor Resolve(SearchFieldDefinition definition)
     {
-        var entity = _entities.Get(definition.EntityName);
-
-        return entity.Store == StoreKind.PostgresEF
-            ? ResolveSelectorBased(definition, entity)
-            : ResolveStoragePathBased(definition);
+        return _entity.Store == StoreKind.PostgresEF
+            ? ResolveSelectorBased(definition)     // PostgresEF
+            : ResolveStoragePathBased(definition); // PostgresRaw e Mongo
     }
 
-    private static FieldDescriptor ResolveSelectorBased(SearchFieldDefinition definition, SearchEntity entity)
+    private FieldDescriptor ResolveSelectorBased(SearchFieldDefinition definition)
     {
-        var entityType = entity.ClrType
-            ?? throw new InvalidOperationException($"L'entità relazionale '{entity.Name}' non ha un tipo CLR.");
+        var entityType = _entity.ClrType
+            ?? throw new InvalidOperationException($"L'entità relazionale '{_entity.Name}' non ha un tipo CLR.");
 
         // Path CLR → Expression (valida il path, fail-fast). Per gli array il path proietta una collezione
         // (es. "Tags.Name" → x.Tags.Select(t => t.Name)); il tipo del campo è quello dell'elemento.
@@ -46,14 +44,19 @@ public sealed class SearchFieldDefinitionResolver
 
         var (kind, underlying) = FieldKindResolver.Resolve(valueType);
 
-        return new FieldDescriptor(definition.Name, kind, definition.IsArray, underlying, selector,
-            OperatorRules.DefaultFor(kind, definition.IsArray))
-        {
-            Label = definition.Label ?? definition.Name,
-            Section = definition.Section,
-            VisibleByDefault = definition.VisibleByDefault,
-            RequiredPermissionId = definition.RequiredPermissionId
-        };
+        return FieldDescriptor.BuildSelectorBased(
+            selector: selector,
+            name: definition.Name,
+            kind: kind,
+            isArray: definition.IsArray,
+            clrType: underlying,
+            label: definition.Label,
+            section: definition.Section,
+            defaultOrder: definition.DefaultOrder,
+            isHidden: definition.IsHidden,
+            requiredPermissionId: definition.RequiredPermissionId,
+            allowedOperators: OperatorRules.DefaultFor(kind, definition.IsArray)
+        );
     }
 
     // Copre sia Mongo sia PostgresRaw: il campo porta un path esplicito (StoragePath), non un selettore CLR.
@@ -62,15 +65,19 @@ public sealed class SearchFieldDefinitionResolver
         // Nessun tipo CLR reale: usiamo la Kind dichiarata (solo per la coercizione dei valori del filtro).
         var clrType = ClrTypeFor(definition.Kind);
 
-        return new FieldDescriptor(definition.Name, definition.Kind, definition.IsArray, clrType, selector: null,
-            OperatorRules.DefaultFor(definition.Kind, definition.IsArray))
-        {
-            StoragePath = definition.Path,
-            Label = definition.Label ?? definition.Name,
-            Section = definition.Section,
-            VisibleByDefault = definition.VisibleByDefault,
-            RequiredPermissionId = definition.RequiredPermissionId
-        };
+        return FieldDescriptor.BuildPathBased(
+            storagePath: definition.Path,
+            name: definition.Name,
+            kind: definition.Kind,
+            isArray: definition.IsArray,
+            clrType: clrType,
+            label: definition.Label ?? definition.Name,
+            section: definition.Section,
+            defaultOrder: definition.DefaultOrder,
+            isHidden: definition.IsHidden,
+            requiredPermissionId: definition.RequiredPermissionId,
+            allowedOperators: OperatorRules.DefaultFor(definition.Kind, definition.IsArray)
+        );
     }
 
     private static Type ClrTypeFor(FieldKind kind) => kind switch

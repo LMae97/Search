@@ -1,3 +1,4 @@
+using Search.Application.Config;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Metadata;
@@ -11,7 +12,7 @@ namespace Search.Application.Querying;
 /// </summary>
 public interface ISearchService
 {
-    SearchResult<IReadOnlyDictionary<string, object?>> Search(string entity, SearchRequest request, SearchCaller caller);
+    SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller);
 }
 
 /// <summary>
@@ -25,7 +26,7 @@ public interface ISearchService
 public interface ISearchHandler
 {
     StoreKind Store { get; }
-    SearchResult<IReadOnlyDictionary<string, object?>> Search(string entityName, SearchRequest request, SearchCaller caller);
+    SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller);
 }
 
 /// <summary>
@@ -36,12 +37,12 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
 {
     public abstract StoreKind Store { get; }
 
-    public SearchResult<IReadOnlyDictionary<string, object?>> Search(string entityName, SearchRequest request, SearchCaller caller)
+    public SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
     {
-        var map = maps.GetEffectiveMap(entityName, caller);
-        var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
+        var map = maps.GetEffectiveMap(config.SearchEntity, caller);
+        var sanitized = new SearchRequestSanitizer(map, config).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
-        return Execute(entityName, map, sanitized);
+        return Execute(config.SearchEntity.Name, map, sanitized);
     }
 
     /// <summary>Esegue la richiesta già sanificata/validata contro lo store concreto.</summary>
@@ -51,16 +52,16 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
 /// <summary>
 /// Facade: dal <see cref="SearchEntityRegistry"/> ricava lo store dell'entità e delega all'handler di quello store.
 /// </summary>
-public sealed class SearchService(IEnumerable<ISearchHandler> handlers, SearchEntityRegistry entities) : ISearchService
+public sealed class SearchService(IEnumerable<ISearchHandler> handlers) : ISearchService
 {
     private readonly IReadOnlyDictionary<StoreKind, ISearchHandler> _handlers =
         handlers.ToDictionary(handler => handler.Store);
 
-    public SearchResult<IReadOnlyDictionary<string, object?>> Search(string entity, SearchRequest request, SearchCaller caller)
+    public SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
     {
-        var store = entities.Get(entity).Store;
+        var store = config.SearchEntity.Store;
         return _handlers.TryGetValue(store, out var handler)
-            ? handler.Search(entity, request, caller)
-            : throw new InvalidOperationException($"Nessun handler di ricerca registrato per lo store '{store}' (entità '{entity}').");
+            ? handler.Search(config, request, caller)
+            : throw new InvalidOperationException($"Nessun handler di ricerca registrato per lo store '{store}' (entità '{config.SearchEntity.Name}').");
     }
 }

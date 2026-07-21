@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Search.Application.Querying.Metadata;
-using Search.Domain.Common;
 
 namespace Search.Application.Querying.Linq;
 
@@ -121,7 +120,7 @@ public sealed class LinqSearchExecutor<TEntity>
     /// </summary>
     private (Expression<Func<TEntity, object[]>> Selector, IReadOnlyList<string> Names) BuildProjection(IReadOnlyList<string> projection)
     {
-        var names = projection.Count == 0 ? _map.DefaultProjection() : projection.ToList();
+        var names = projection.Count == 0 ? [] : projection.ToList();
 
         var parameter = Expression.Parameter(typeof(TEntity), "x");
         var elements = new List<Expression>(names.Count);
