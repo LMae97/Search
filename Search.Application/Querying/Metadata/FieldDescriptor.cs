@@ -15,6 +15,8 @@ public sealed class FieldDescriptor
 
     public FieldKind Kind { get; }
 
+    public bool JsonColumn { get; }
+
     public bool IsArray { get; }
 
     /// <summary>Tipo CLR dello scalare; se <see cref="IsArray"/>, tipo dell'elemento. Nullable già scartato.</summary>
@@ -60,6 +62,7 @@ public sealed class FieldDescriptor
         FieldKind kind,
         bool isArray,
         Type clrType,
+        bool jsonColumn,
         string? label,
         string? section,
         int? defaultOrder,
@@ -71,6 +74,7 @@ public sealed class FieldDescriptor
         Kind = kind;
         IsArray = isArray;
         ClrType = clrType;
+        JsonColumn = jsonColumn;
         Label = label ?? name;
         Section = section;
         DefaultOrder = defaultOrder;
@@ -85,6 +89,7 @@ public sealed class FieldDescriptor
         FieldKind kind,
         bool isArray,
         Type clrType,
+        bool jsonColumn,
         string? label,
         string? section,
         int? defaultOrder,
@@ -92,7 +97,7 @@ public sealed class FieldDescriptor
         Guid? requiredPermissionId,
         IReadOnlySet<FilterOperator> allowedOperators)
     {
-        return new FieldDescriptor(name, kind, isArray, clrType, label, section,
+        return new FieldDescriptor(name, kind, isArray, clrType, jsonColumn, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
             StoragePath = storagePath
@@ -105,6 +110,7 @@ public sealed class FieldDescriptor
         FieldKind kind,
         bool isArray,
         Type clrType,
+        bool jsonColumn,
         string? label,
         string? section,
         int? defaultOrder,
@@ -112,7 +118,7 @@ public sealed class FieldDescriptor
         Guid? requiredPermissionId,
         IReadOnlySet<FilterOperator> allowedOperators)
     {
-        return new FieldDescriptor(name, kind, isArray, clrType, label, section,
+        return new FieldDescriptor(name, kind, isArray, clrType, jsonColumn, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
             Selector = selector

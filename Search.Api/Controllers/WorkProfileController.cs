@@ -7,15 +7,15 @@ using Search.Application.Querying.Dynamic;
 namespace Search.Api.Controllers;
 
 [ApiController]
-[Route("customers")]
-public sealed class CustomerController : ControllerBase
+[Route("work-profiles")]
+public sealed class WorkProfileController : ControllerBase
 {
     // Utente di audit fittizio finché non c'è l'autenticazione reale.
     private const string AuditUser = "api@we-byte.it";
 
     private readonly ISearchService _search;
 
-    public CustomerController(ISearchService search)
+    public WorkProfileController(ISearchService search)
     {
         _search = search;
     }
@@ -27,7 +27,7 @@ public sealed class CustomerController : ControllerBase
             SimulatedFieldDefinitionDatabase.DemoSpace,
             new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
 
-        var entityConfig = new CustomerEntityConfig();
+        var entityConfig = new WorkProfileEntityConfig();
 
         var result = _search.Search(entityConfig, request, caller);
 

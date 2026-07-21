@@ -10,72 +10,57 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 {
     public SqlEntitySchema GetSchema(string entityName) => entityName.ToLowerInvariant() switch
     {
-        "brand" => Brand,
-        "product" => Product,
         "customer" => Customer,
+        "workprofile" => Workprofile,
         _ => throw new InvalidOperationException($"Nessuna configurazione SQL per l'entità '{entityName}'.")
     };
-
-
-    // brand → tabella "Brands" (alias "brand"), soft-delete su IsDeleted, tag via tabella ponte "BrandTag".
-    private static readonly SqlEntitySchema Brand = new(
-        from: "FROM \"Brands\" AS \"brand\"",
-        basePredicate: "NOT (\"brand\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
-        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["tags"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Name\"", "SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) " + BrandTagJoin),
-            ["tagIds"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Id\"", "SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) " + BrandTagJoin),
-            ["dataTags"] = new SqlArrayMapping( //TODO: QUESTO POTREBBE DIVENTARE UN JSON MAPPING
-                From: "FROM jsonb_array_elements_text(coalesce(\"brand\".\"Data\" -> 'tags','[]'::jsonb)) AS elem WHERE true",
-                ElementColumn: "elem",
-                Projection: "\"brand\".\"Data\" -> 'tags'")
-        });
-
-    // Correlazione col padre inclusa: è tutto ciò che segue "SELECT 1" nell'EXISTS (filtro) e nell'aggregazione
-    // json_group_array (proiezione). Un'unica definizione riusata da entrambi.
-    private const string BrandTagJoin = """
-        FROM "BrandTag" AS "bt"
-        INNER JOIN (
-            SELECT "t"."Id", "t"."Name"
-            FROM "Tags" AS "t"
-            WHERE NOT ("t"."IsDeleted")
-        ) AS "tag" ON "bt"."TagsId" = "tag"."Id"
-        WHERE "brand"."Id" = "bt"."BrandId"
-        """;
-
-    private static readonly SqlEntitySchema Product = new(
-        from: "FROM \"Products\" AS \"product\"",
-        basePredicate: "NOT (\"product\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
-        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"product\".\"BrandId\""),
-            ["tags"] = new SqlArrayMapping(
-                From: ProductTagJoin, 
-                ElementColumn: "\"tag\".\"Name\"",
-                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) {ProductTagJoin})"),
-            ["tagIds"] = new SqlArrayMapping(
-                From: ProductTagJoin,
-                ElementColumn: "\"tag\".\"Id\"",
-                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) {ProductTagJoin})"),
-        });
-
-    private const string ProductTagJoin = """
-        FROM "ProductTag" AS "pt"
-        INNER JOIN (
-            SELECT "t"."Id", "t"."Name"
-            FROM "Tags" AS "t"
-            WHERE NOT ("t"."IsDeleted")
-        ) AS "tag" ON "pt"."TagsId" = "tag"."Id"
-        WHERE "product"."Id" = "pt"."ProductId"
-        """;
 
     private static readonly SqlEntitySchema Customer = new(
         from: "FROM \"Customers\" AS \"customer\"",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
-            ["landline"] = new SqlArrayMapping(
-                From: "FROM jsonb_array_elements_text(coalesce(\"customer\".\"Landline\", '[]'::jsonb)) AS elem WHERE true",
-                ElementColumn: "elem",
-                Projection: "\"customer\".\"Landline\"")
+            ["createdByName"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteCreatore\" ON \"utenteCreatore\".\"Id\" = \"customer\".\"CreatedById\""),
+            ["updatedByName"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteModificatore\" ON \"utenteModificatore\".\"Id\" = \"customer\".\"UpdatedById\""),
+            ["tagIds"] = new SqlM2MJoin(CustomerTagJoin()),
+            ["tagNames"] = new SqlM2MJoin(CustomerTagJoin("t.\"Name\""))
         });
+
+    private static string CustomerTagJoin(params string[] args)
+    {
+        var select = "\"t\".\"Id\" AS \"Id\"";
+        foreach (var arg in args) select += ", " + arg;
+        return $"""
+            FROM "CustomerTag" AS "ct"
+            INNER JOIN (
+                SELECT {select}
+                FROM "Tags" AS "t"
+            ) AS "tag" ON "ct"."TagId" = "tag"."Id"
+            WHERE customer."Id" = "ct"."CustomerId"
+        """;
+    }
+
+    private static readonly SqlEntitySchema Workprofile = new(
+        from: "FROM \"WorkProfiles\" AS \"workprofile\"",
+        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"workprofile\".\"BrandId\""),
+            ["userIds"] = new SqlM2MJoin(WorkprofileUserJoin()),
+            ["userNames"] = new SqlM2MJoin(WorkprofileUserJoin("u.\"Username\""))
+        });
+
+    private static string WorkprofileUserJoin(params string[] args)
+    {
+        var select = "\"u\".\"Id\" AS \"Id\"";
+
+        foreach ( var arg in args ) select += ", " + arg;
+
+        return $"""
+            FROM "UserWorkProfile" AS "uwp"
+            INNER JOIN (
+                SELECT {select}
+                FROM "Users" AS "u"
+            ) AS "utente" ON "uwp"."UserId" = "utente"."Id"
+            WHERE workprofile."Id" = "uwp"."WorkProfileId"
+        """;
+    } 
 }

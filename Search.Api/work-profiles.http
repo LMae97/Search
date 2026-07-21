@@ -1,0 +1,19 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### Ricerca: price >= 10 AND tags ⊇ {sale|novità}, ordinati per prezzo desc
+POST {{baseUrl}}/work-profiles/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "spaceId", "op": "eq", "value": "9f1b1317-9780-4aeb-a037-1e80957149ae" }
+    ]
+  },
+  "projection": ["id", "name", "userNames", "userIds", "spaceId"],
+  "sort": [
+    { "field": "brandName", "direction": "Ascending" }
+  ],
+  "page": { "number": 1, "size": 10 }
+}

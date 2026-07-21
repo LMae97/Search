@@ -7,9 +7,9 @@ Content-Type: {{contentType}}
 
 {
   "filter": {
-    "and": [
+    "or": [
       { "field": "landline", "op": "arrayContains", "value": "03023465545" },
-      { "field": "lastName", "op": "contains", "value": "Maestrini" }
+      { "field": "legalStreet", "op": "contains", "value": "madonna" }
     ]
   },
   "projection": ["lastName", "firstName", "legalStreet", "landline"],
@@ -18,4 +18,31 @@ Content-Type: {{contentType}}
     { "field": "firstName", "direction": "Ascending" }
   ],
   "page": { "number": 1, "size": 10 }
+}
+
+
+
+### Ricerca:
+POST {{baseUrl}}/customers/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "spaceId", "op": "eq", "value": "4ae7781f-28a9-4070-b545-dfeb854c8764" },
+      { "field": "tagNames", "op": "containsAny", "values": ["PROVA", "hhhhh", "lllllllllllllllllllllll"] }
+    ]
+  },
+  "projection": [
+    "id", "businessType", "legalDoor", "phone", "businessCode", "email", "businessName", "legalStairs",
+    "vatNumber", "sector", "legalCountry", "legalFloor", "legalStreet", "legalStreetNumber", "birthProvince", "lastName", 
+    "website", "legalState", "legalCity", "birthPlace", "birthCountry", "legalZip", "sdiCode", "businessFiscalCode", 
+    "tagIds", "businessActivity", "fax", "pec", "firstName", "sex", "tagNames", "type", 
+    "fiscalCode", "externalId", "landline", "mobile", "createdById", "createdByName", "updatedById", "updatedByName"
+  ],
+  "sort": [
+    { "field": "lastName", "direction": "Ascending" },
+    { "field": "id", "direction": "Ascending" }
+  ],
+  "page": { "number": 1, "size": 2 }
 }

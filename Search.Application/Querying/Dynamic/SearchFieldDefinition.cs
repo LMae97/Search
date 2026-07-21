@@ -14,6 +14,7 @@ public sealed record SearchFieldDefinition(
     string EntityName,
     string Name,
     FieldKind Kind,
+    bool JsonColumn,                    // se il campo è memorizzato in una colonna JSONB (Postgres)
     bool IsArray,
     string Path,
     string? Label = null,

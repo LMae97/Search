@@ -1,7 +1,6 @@
 <Solution>
   <Project Path="Search.Api/Search.Api.csproj" />
   <Project Path="Search.Application/Search.Application.csproj" />
-  <Project Path="Search.Domain/Search.Domain.csproj" />
   <Project Path="Search.Infrastructure.Mongo/Search.Infrastructure.Mongo.csproj" />
   <Project Path="Search.Infrastructure.Sql/Search.Infrastructure.Sql.csproj" />
 </Solution>

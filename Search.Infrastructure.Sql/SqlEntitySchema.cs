@@ -11,7 +11,7 @@ namespace Search.Infrastructure.Sql;
 /// Predicato sempre applicato in AND al filtro utente (es. soft-delete <c>NOT ("brand"."IsDeleted")</c>). Null = nessuno.
 /// </param>
 /// <param name="ArrayMappings">
-/// Per i campi array/collezione: come diventano EXISTS/aggregazioni correlati (vedi <see cref="SqlArrayMapping"/>),
+/// Per i campi array/collezione: come diventano EXISTS/aggregazioni correlati (vedi <see cref="SqlM2MJoin"/>),
 /// per nome-campo pubblico. Vuoto se l'entità non ha collezioni ricercabili.
 /// </param>
 public sealed class SqlEntitySchema
@@ -30,10 +30,10 @@ public sealed class SqlEntitySchema
         Joins = joins ?? new Dictionary<string, SqlJoin>();
     }
 
-    public IReadOnlyDictionary<string, SqlArrayMapping> GetManyToManyJoins()
+    public IReadOnlyDictionary<string, SqlM2MJoin> GetM2MJoins()
         => Joins
-            .Where(kv => kv.Value is SqlArrayMapping)
-            .ToDictionary(kv => kv.Key, kv => (SqlArrayMapping)kv.Value);
+            .Where(kv => kv.Value is SqlM2MJoin)
+            .ToDictionary(kv => kv.Key, kv => (SqlM2MJoin)kv.Value);
 
     public IReadOnlyDictionary<string, SqlSimpleJoin> GetSimpleJoins()
         => Joins

@@ -1,13 +1,10 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using Search.Application.Catalog;
 using Search.Application.Querying;
 using Search.Application.Querying.Dynamic;
-using Search.Domain.Common;
 using Search.Application.Querying.Validation;
 using Search.Api.Serialization;
 using Search.Infrastructure.Sql;
-using Search.Infrastructure.Sql.EF;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +22,6 @@ builder.Services
 var catalogConnectionString = builder.Configuration.GetConnectionString("Catalog")
     ?? throw new InvalidOperationException("Manca la connection string 'Catalog' (appsettings o variabile d'ambiente).");
 
-builder.Services.AddDbContext<CatalogDbContext>(options => options.UseNpgsql(catalogConnectionString));
-builder.Services.AddScoped<IProductRepository, EfProductRepository>();                              // CRUD via EF
 builder.Services.AddSingleton<ICatalogConnectionFactory>(new NpgsqlCatalogConnectionFactory(catalogConnectionString)); // ricerca raw
 builder.Services.AddSingleton<ISqlSchemaProvider, CatalogSqlSchemaProvider>();
 
@@ -54,10 +49,6 @@ app.Use(async (context, next) =>
     {
         await next();
     }
-    catch (DomainException ex)
-    {
-        await WriteProblem(context, StatusCodes.Status422UnprocessableEntity, ex.Message);
-    }
     catch (SearchValidationException ex)
     {
         await WriteProblem(context, StatusCodes.Status422UnprocessableEntity, ex.Message);
@@ -69,14 +60,6 @@ app.Use(async (context, next) =>
 });
 
 app.MapControllers();
-
-// Schema (spike: EnsureCreated; in produzione → migrazioni) e seed se il DB è vuoto. In uno scope perché
-// il repository/DbContext sono scoped.
-using (var scope = app.Services.CreateScope())
-{
-    scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Database.EnsureCreated();
-    var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
-}
 
 app.Run();
 

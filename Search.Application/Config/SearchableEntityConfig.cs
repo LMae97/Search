@@ -67,3 +67,18 @@ public class CustomerEntityConfig : ISearchableEntityConfig
         new SortField("id", SortDirection.Ascending)
     ];
 }
+
+public class WorkProfileEntityConfig : ISearchableEntityConfig
+{
+    public SearchEntity SearchEntity => SearchEntity.RelationalRaw("workprofile");
+    public IReadOnlyList<string> DefaultProjection => [
+        "id",
+        "name",
+        "brandId",
+        "brandName"
+    ];
+    public IReadOnlyList<SortField> DefaultSort => [
+        new SortField("name", SortDirection.Ascending),
+        new SortField("id", SortDirection.Ascending)
+    ];
+}

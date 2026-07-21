@@ -20,7 +20,7 @@ public sealed class SqlSearchQueryBuilder
     {
         _map = map;
         _schema = schema;
-        _filter = new SqlFilterTranslator(map, schema.GetManyToManyJoins());
+        _filter = new SqlFilterTranslator(map, schema.GetM2MJoins());
     }
 
     /// <summary>Query dati: <c>SELECT … FROM … WHERE … ORDER BY … LIMIT/OFFSET</c>.</summary>
@@ -73,7 +73,7 @@ public sealed class SqlSearchQueryBuilder
 
         var joins = usedFields
             .Where(scalarJoins.ContainsKey)
-            .Select(field => scalarJoins[field].Condition)
+            .Select(field => scalarJoins[field].From)
             .Distinct()
             .ToList();
 
@@ -93,16 +93,17 @@ public sealed class SqlSearchQueryBuilder
         if (!_map.TryGetField(name, out var field))
             throw new InvalidOperationException($"Proiezione su campo non mappato '{name}'.");
 
-        if (!field.IsArray)
-            return $"{field.SqlColumn()} AS \"{name}\"";
-
-        // Campo array/collezione, due "facce" (vedi SqlArrayMapping):
+        // Campo array/collezione, due "facce" (vedi SqlM2MJoin):
         //  - M2M (junction): niente Projection → RICOSTRUISCE l'array con json_group_array sullo stesso join del filtro.
         //  - JSON (jsonb): la colonna È già un array → Projection diretta (es. "brand"."Data" -> 'tags').
-        if (!_schema.GetManyToManyJoins().TryGetValue(name, out var join))
+
+        if (!field.IsArray || field.JsonColumn)
+            return $"{field.SqlColumn()} AS \"{name}\"";
+
+        if (!_schema.GetM2MJoins().TryGetValue(name, out var join))
             throw new NotSupportedException($"Il campo array '{name}' non ha una mappatura di collezione SQL (SqlArrayMapping).");
-        var projection = join.Projection ?? $"(SELECT json_group_array({join.ElementColumn}) {join.From})";
-        return $"{projection} AS \"{name}\"";
+
+        return $"(SELECT json_agg({field.SqlColumn()}) {join.From}) AS \"{name}\"";
     }
 
     private string BuildWhere(FilterNode? filter, Dictionary<string, object?> parameters)
