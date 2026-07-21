@@ -50,3 +50,20 @@ public class BrandEntityConfig : ISearchableEntityConfig
         new SortField("id", SortDirection.Ascending)
     ];
 }
+
+public class CustomerEntityConfig : ISearchableEntityConfig
+{
+    public SearchEntity SearchEntity => SearchEntity.RelationalRaw(SearchableEntityName.Customer);
+
+    public IReadOnlyList<string> DefaultProjection => [
+        "id",
+        "firstName",
+        "lastName",
+        "email"
+    ];
+
+    public IReadOnlyList<SortField> DefaultSort => [
+        new SortField("name", SortDirection.Ascending) ,
+        new SortField("id", SortDirection.Ascending)
+    ];
+}

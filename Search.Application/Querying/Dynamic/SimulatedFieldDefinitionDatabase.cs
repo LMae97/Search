@@ -89,6 +89,16 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("brand", "dataTags", FieldKind.String, true,
             "\"brand\".\"Data\" -> 'tags'", Label: "Tag (JSON)", Section: "JSON"));
 
+
+
+
+        rows.Add(new SearchFieldDefinition("customer", "id", FieldKind.Guid, false, "customer.\"Id\""));
+        rows.Add(new SearchFieldDefinition("customer", "firstName", FieldKind.String, false, "customer.\"FirstName\""));
+        rows.Add(new SearchFieldDefinition("customer", "lastName", FieldKind.String, false, "customer.\"LastName\""));
+        rows.Add(new SearchFieldDefinition("customer", "email", FieldKind.String, false, "customer.\"Email\""));
+        rows.Add(new SearchFieldDefinition("customer", "legalStreet", FieldKind.String, false, "customer.\"Legal\" ->> 'Street'"));
+        rows.Add(new SearchFieldDefinition("customer", "landline", FieldKind.String, true, "customer.\"Landline\""));
+
         return rows;
     }
 }

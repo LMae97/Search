@@ -9,7 +9,11 @@ public static class SearchMapExtensions
 {
     /// <summary>Nomi dei campi visibili di default, usati quando la proiezione richiesta è vuota.</summary>
     public static IReadOnlyList<string> DefaultProjection(this IEntitySearchMap map) =>
-        map.Fields.Values.Where(field => field.VisibleByDefault).Select(field => field.Name).ToList();
+        map.Fields.Values
+            .Where(field => field.DefaultOrder != null)
+            .OrderBy(field => field.DefaultOrder)
+            .Select(field => field.Name)
+            .ToList();
 
     /// <summary>
     /// Campo su cui ordinare quando la richiesta non specifica un sort, per una paginazione deterministica:

@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### Ricerca: price >= 10 AND tags ⊇ {sale|novità}, ordinati per prezzo desc
+POST {{baseUrl}}/customers/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "landline", "op": "arrayContains", "value": "03023465545" },
+      { "field": "lastName", "op": "contains", "value": "Maestrini" }
+    ]
+  },
+  "projection": ["lastName", "firstName", "legalStreet", "landline"],
+  "sort": [
+    { "field": "lastName", "direction": "Ascending" },
+    { "field": "firstName", "direction": "Ascending" }
+  ],
+  "page": { "number": 1, "size": 10 }
+}

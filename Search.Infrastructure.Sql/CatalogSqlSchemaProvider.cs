@@ -12,6 +12,7 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     {
         "brand" => Brand,
         "product" => Product,
+        "customer" => Customer,
         _ => throw new InvalidOperationException($"Nessuna configurazione SQL per l'entità '{entityName}'.")
     };
 
@@ -24,7 +25,7 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         {
             ["tags"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Name\"", "SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) " + BrandTagJoin),
             ["tagIds"] = new SqlArrayMapping(BrandTagJoin, "\"tag\".\"Id\"", "SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) " + BrandTagJoin),
-            ["dataTags"] = new SqlArrayMapping(
+            ["dataTags"] = new SqlArrayMapping( //TODO: QUESTO POTREBBE DIVENTARE UN JSON MAPPING
                 From: "FROM jsonb_array_elements_text(coalesce(\"brand\".\"Data\" -> 'tags','[]'::jsonb)) AS elem WHERE true",
                 ElementColumn: "elem",
                 Projection: "\"brand\".\"Data\" -> 'tags'")
@@ -43,20 +44,20 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         """;
 
     private static readonly SqlEntitySchema Product = new(
-    from: "FROM \"Products\" AS \"product\"",
-    basePredicate: "NOT (\"product\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
-    joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"product\".\"BrandId\""),
-        ["tags"] = new SqlArrayMapping(
-            From: ProductTagJoin, 
-            ElementColumn: "\"tag\".\"Name\"",
-            Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) {ProductTagJoin})"),
-        ["tagIds"] = new SqlArrayMapping(
-            From: ProductTagJoin,
-            ElementColumn: "\"tag\".\"Id\"",
-            Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) {ProductTagJoin})"),
-    });
+        from: "FROM \"Products\" AS \"product\"",
+        basePredicate: "NOT (\"product\".\"IsDeleted\")", // soft-delete: sempre in AND col filtro utente
+        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"product\".\"BrandId\""),
+            ["tags"] = new SqlArrayMapping(
+                From: ProductTagJoin, 
+                ElementColumn: "\"tag\".\"Name\"",
+                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Name\"), ARRAY[]::text[]) {ProductTagJoin})"),
+            ["tagIds"] = new SqlArrayMapping(
+                From: ProductTagJoin,
+                ElementColumn: "\"tag\".\"Id\"",
+                Projection: $"(SELECT COALESCE(array_agg(\"tag\".\"Id\"), ARRAY[]::uuid[]) {ProductTagJoin})"),
+        });
 
     private const string ProductTagJoin = """
         FROM "ProductTag" AS "pt"
@@ -67,4 +68,14 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         ) AS "tag" ON "pt"."TagsId" = "tag"."Id"
         WHERE "product"."Id" = "pt"."ProductId"
         """;
+
+    private static readonly SqlEntitySchema Customer = new(
+        from: "FROM \"Customers\" AS \"customer\"",
+        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["landline"] = new SqlArrayMapping(
+                From: "FROM jsonb_array_elements_text(coalesce(\"customer\".\"Landline\", '[]'::jsonb)) AS elem WHERE true",
+                ElementColumn: "elem",
+                Projection: "\"customer\".\"Landline\"")
+        });
 }

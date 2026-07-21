@@ -40,7 +40,7 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
     public SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
     {
         var map = maps.GetEffectiveMap(config.SearchEntity, caller);
-        var sanitized = new SearchRequestSanitizer(map, config).Sanitize(request);
+        var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
         return Execute(config.SearchEntity.Name, map, sanitized);
     }
