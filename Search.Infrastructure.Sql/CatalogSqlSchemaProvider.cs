@@ -69,11 +69,14 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 
     private static readonly SqlEntitySchema User = new(
         from: "FROM \"Users\" AS \"utente\"",
+        basePredicate: "utente.\"SpaceId\" = @space AND utente.\"SoftDeleted\" = FALSE",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
             ["workProfile"] = new SqlM2MJoin(UserWorkProfileJoin()),
+            ["accountEmail"] = new SqlSimpleJoin("LEFT JOIN \"Accounts\" AS \"account\" ON \"account\".\"Id\" = \"utente\".\"AccountId\"")
         });
 
+    /*
     private static string UserWorkProfileJoin()
     {
         return $"""
@@ -86,6 +89,21 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
                 SELECT b."Id", b."Name"
                 FROM "Brands" AS "b"
             ) AS "brand" ON "workprofile"."BrandId" = "brand"."Id"
+            WHERE utente."Id" = "uwp"."UserId"
+        """;
+    }
+    */
+
+    private static string UserWorkProfileJoin()
+    {
+        return $"""
+            FROM "UserWorkProfileReadOnly" AS "uwp"
+            INNER JOIN "WorkProfiles" AS "workprofile"
+                ON "uwp"."WorkProfileId" = "workprofile"."Id"
+                AND "workprofile"."SpaceId" = @space
+            INNER JOIN "Brands" AS "brand"
+                ON "workprofile"."BrandId" = "brand"."Id"
+                AND "brand"."SpaceId" = @space
             WHERE utente."Id" = "uwp"."UserId"
         """;
     }

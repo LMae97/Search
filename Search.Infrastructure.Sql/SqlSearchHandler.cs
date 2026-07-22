@@ -18,7 +18,7 @@ public sealed class SqlSearchHandler(
 {
     public override StoreKind Store => StoreKind.PostgresRaw;
 
-    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request)
+    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request, Guid spaceId)
     {
         var builder = new SqlSearchQueryBuilder(map, schemas.GetSchema(entityName));
         var executor = new SqlSearchExecutor();
@@ -26,8 +26,8 @@ public sealed class SqlSearchHandler(
         using var connection = connections.Create();
         connection.Open();
 
-        var countQuery = builder.BuildCount(request);
-        var query = builder.Build(request);
+        var countQuery = builder.BuildCount(request, spaceId);
+        var query = builder.Build(request, spaceId);
 
         logger.LogInformation("Executing SQL count query:\n{Sql}\nwith parameters:\n{Parameters}", countQuery.Sql, FormatParameters(countQuery.Parameters));
         logger.LogInformation("Executing SQL query:\n{Sql}\nwith parameters:\n{Parameters}", query.Sql, FormatParameters(query.Parameters));

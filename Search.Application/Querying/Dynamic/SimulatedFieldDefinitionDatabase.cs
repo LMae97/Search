@@ -11,7 +11,7 @@ namespace Search.Application.Querying.Dynamic;
 public static class SimulatedFieldDefinitionDatabase
 {
     /// <summary>Tenant di demo a cui è associato il campo dinamico "deliveryZone".</summary>
-    public static readonly Guid DemoSpace = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    public static readonly Guid DemoSpace = Guid.Parse("4ae7781f-28a9-4070-b545-dfeb854c8764");
 
     /// <summary>Crea un provider in memoria già popolato con le definizioni di demo.</summary>
     public static InMemorySearchFieldDefinitionProvider Create()
@@ -142,6 +142,7 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("utente", "email", FieldKind.String, false, false, "utente.\"Email\""));
         rows.Add(new SearchFieldDefinition("utente", "name", FieldKind.String, false, false, "utente.\"Name\" || ' ' || utente.\"LastName\""));
         rows.Add(new SearchFieldDefinition("utente", "workProfile", FieldKind.String, false, true, "brand.\"Name\" || ' (' || workprofile.\"Name\" || ')'"));
+        rows.Add(new SearchFieldDefinition("utente", "accountEmail", FieldKind.String, false, false, "account.\"Email\""));
 
         rows.Add(new SearchFieldDefinition("workProfile", "id", FieldKind.Guid, false, false, "workProfile.\"Id\""));
         rows.Add(new SearchFieldDefinition("workProfile", "name", FieldKind.String, false, false, "workProfile.\"Name\""));

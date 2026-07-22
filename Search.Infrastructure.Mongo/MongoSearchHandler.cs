@@ -16,7 +16,7 @@ public sealed class MongoSearchHandler(
 {
     public override StoreKind Store => StoreKind.Mongo;
 
-    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request)
+    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request, Guid spaceId)
     {
         var collection = collections.GetCollection(entityName);
         return new MongoSearchExecutor<BsonDocument>(map).Execute(collection, request);

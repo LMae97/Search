@@ -117,8 +117,16 @@ public sealed class SqlFilterTranslator
                 : (_arrayMappings[field.Name].From);
 
             return elementPredicate is null
-                ? $"EXISTS (SELECT 1 {from})"
-                : $"EXISTS (SELECT 1 {from} AND {elementPredicate})";
+                ? $"""
+                EXISTS 
+                    (SELECT 1 
+                    {from})
+                """
+                : $"""
+                EXISTS 
+                    (SELECT 1 
+                    {from} AND {elementPredicate})
+                """;
         }
 
         var elementColumn = field.JsonColumn

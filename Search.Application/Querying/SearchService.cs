@@ -42,11 +42,11 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
         var map = maps.GetEffectiveMap(config.SearchEntity, caller);
         var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
-        return Execute(config.SearchEntity.Name, map, sanitized);
+        return Execute(config.SearchEntity.Name, map, sanitized, caller.SpaceId);
     }
 
     /// <summary>Esegue la richiesta già sanificata/validata contro lo store concreto.</summary>
-    protected abstract SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request);
+    protected abstract SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request, Guid spaceId);
 }
 
 /// <summary>

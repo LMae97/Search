@@ -24,7 +24,7 @@ public sealed class SqlSearchQueryBuilder
     }
 
     /// <summary>Query dati: <c>SELECT … FROM … WHERE … ORDER BY … LIMIT/OFFSET</c>.</summary>
-    public SqlQueryPlan Build(SearchRequest request)
+    public SqlQueryPlan Build(SearchRequest request, Guid spaceId)
     {
         var names = ResolveProjection(request.Projection);
         var parameters = new Dictionary<string, object?>();
@@ -46,18 +46,32 @@ public sealed class SqlSearchQueryBuilder
             orderBy +
             "LIMIT @take OFFSET @skip";
 
+        BindSpace(sql, parameters, spaceId);
+
         return new SqlQueryPlan(sql, parameters);
     }
 
     /// <summary>Query di conteggio totale (stesso WHERE, senza proiezione/ordinamento/paginazione).</summary>
-    public SqlQueryPlan BuildCount(SearchRequest request)
+    public SqlQueryPlan BuildCount(SearchRequest request, Guid spaceId)
     {
         var parameters = new Dictionary<string, object?>();
         var where = BuildWhere(request.Filter, parameters);
         // Il COUNT non proietta né ordina: servono solo i join richiesti dai campi del filtro.
         var from = BuildFrom(FilterFields(request.Filter));
         var sql = $"SELECT COUNT(*)\n{from}\n{where}".TrimEnd();
+
+        BindSpace(sql, parameters, spaceId);
+
         return new SqlQueryPlan(sql, parameters);
+    }
+
+    // @space è un parametro "ambient" (tenant del caller, non un filtro utente): compare nell'SQL solo quando è
+    // stato emesso un join che lo referenzia (es. workProfile proiettato/filtrato). Lo leghiamo solo se davvero
+    // presente nel testo, così non passiamo mai un parametro inutilizzato quando quel join non c'è.
+    private static void BindSpace(string sql, Dictionary<string, object?> parameters, Guid spaceId)
+    {
+        if (sql.Contains("@space"))
+            parameters["@space"] = spaceId;
     }
 
     private IReadOnlyList<string> ResolveProjection(IReadOnlyList<string> projection) =>
@@ -103,7 +117,10 @@ public sealed class SqlSearchQueryBuilder
         if (!_schema.GetM2MJoins().TryGetValue(name, out var join))
             throw new NotSupportedException($"Il campo array '{name}' non ha una mappatura di collezione SQL (SqlArrayMapping).");
 
-        return $"(SELECT json_agg({field.SqlColumn()}) {join.From}) AS \"{name}\"";
+        return $"""
+            (SELECT json_agg({field.SqlColumn()}) 
+            {join.From}) AS "{name}"
+            """;
     }
 
     private string BuildWhere(FilterNode? filter, Dictionary<string, object?> parameters)

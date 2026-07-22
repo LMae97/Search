@@ -6,9 +6,14 @@ POST {{baseUrl}}/users/search
 Content-Type: {{contentType}}
 
 {
+  "filter": {
+    "and": [
+      { "field": "workProfile", "op": "arrayIsEmpty" }
+    ]
+  },
   "projection": [
     "id", "username", "email", 
-    "name", "workProfile"
+    "name", "workProfile", "accountEmail"
   ],
   "sort": [
     { "field": "username", "direction": "Ascending" }
