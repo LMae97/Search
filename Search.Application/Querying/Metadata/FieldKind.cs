@@ -9,5 +9,6 @@ public enum FieldKind
     Boolean,
     DateTime,
     Guid,
-    Enum
+    Enum,
+    ObjectId    // id documentale (Mongo): 24 hex; coerciato come stringa, tradotto in BsonObjectId dal translator Mongo
 }

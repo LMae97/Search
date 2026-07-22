@@ -95,7 +95,11 @@ public sealed class MongoFilterTranslator<TDocument>
         var path = field.StoragePath
             ?? throw new InvalidOperationException($"Il campo '{field.Name}' non ha uno StoragePath (richiesto per lo store documentale).");
 
-        BsonValue Value(object? raw) => ToBson(ValueCoercion.Coerce(raw, field.ClrType));
+        // Campo ObjectId (es. _id): il valore arriva come hex a 24 char e va tradotto in BsonObjectId,
+        // altrimenti confrontare una stringa con un ObjectId in Mongo non matcha mai.
+        BsonValue Value(object? raw) => field.Kind == FieldKind.ObjectId
+            ? ToObjectId(raw)
+            : ToBson(ValueCoercion.Coerce(raw, field.ClrType));
         BsonArray Array() => new(node.Values.Select(Value));
         BsonDocument Op(string @operator, BsonValue value) => new(path, new BsonDocument(@operator, value));
 
@@ -157,6 +161,21 @@ public sealed class MongoFilterTranslator<TDocument>
      * DateTimeOffset            → BsonDateTime(UTC)
      * null                      → BsonNull.Value
      */
+    /**
+     * Hex a 24 char → BsonObjectId. Input non valido → ArgumentException (il middleware la mappa a 400,
+     * non a 500): è un valore fornito dal client.
+     */
+    private static BsonValue ToObjectId(object? raw)
+    {
+        if (raw is null)
+            return BsonNull.Value;
+
+        var text = raw.ToString();
+        return ObjectId.TryParse(text, out var oid)
+            ? new BsonObjectId(oid)
+            : throw new ArgumentException($"Valore ObjectId non valido: '{text}'.");
+    }
+
     private static BsonValue ToBson(object? value) => value switch
     {
         null => BsonNull.Value,

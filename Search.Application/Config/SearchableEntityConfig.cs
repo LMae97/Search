@@ -17,6 +17,8 @@ public static class SearchableEntityName
     public const string Brand = "brand";
 
     public const string Customer = "customer";
+
+    public const string CompensationPlan = "compensationPlan";
 }
 
 public class ProductEntityConfig : ISearchableEntityConfig
@@ -77,6 +79,25 @@ public class WorkProfileEntityConfig : ISearchableEntityConfig
         "brandId",
         "brandName"
     ];
+    public IReadOnlyList<SortField> DefaultSort => [
+        new SortField("name", SortDirection.Ascending),
+        new SortField("id", SortDirection.Ascending)
+    ];
+}
+
+public class CompensationPlanEntityConfig : ISearchableEntityConfig
+{
+    // Store documentale (Mongo): il nome dell'entità è la chiave delle definizioni campi;
+    // il mapping verso la collection reale ("CompensationPlan") vive nel MongoCollectionProvider.
+    public SearchEntity SearchEntity => SearchEntity.Document(SearchableEntityName.CompensationPlan);
+
+    public IReadOnlyList<string> DefaultProjection => [
+        "id",
+        "name",
+        "description",
+        "createdAt"
+    ];
+
     public IReadOnlyList<SortField> DefaultSort => [
         new SortField("name", SortDirection.Ascending),
         new SortField("id", SortDirection.Ascending)

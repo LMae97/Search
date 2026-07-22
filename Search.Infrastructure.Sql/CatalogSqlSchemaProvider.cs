@@ -34,10 +34,9 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 
         return $"""
             FROM "CustomerTag" AS "ct"
-            INNER JOIN (
-                SELECT {select}
-                FROM "Tags" AS "t"
-            ) AS "tag" ON "ct"."TagId" = "tag"."Id"
+            INNER JOIN "Tags" AS "t"
+                ON "ct"."TagId" = "tag"."Id"
+                AND "tag"."SpaceId" = @space
             WHERE customer."Id" = "ct"."CustomerId"
         """;
     }
@@ -59,10 +58,9 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 
         return $"""
             FROM "UserWorkProfile" AS "uwp"
-            INNER JOIN (
-                SELECT {select}
-                FROM "Users" AS "u"
-            ) AS "utente" ON "uwp"."UserId" = "utente"."Id"
+            INNER JOIN Users" AS "utente" 
+                ON "uwp"."UserId" = "utente"."Id"
+                AND "utente"."SpaceId" = @space
             WHERE workprofile."Id" = "uwp"."WorkProfileId"
         """;
     } 
@@ -75,24 +73,6 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
             ["workProfile"] = new SqlM2MJoin(UserWorkProfileJoin()),
             ["accountEmail"] = new SqlSimpleJoin("LEFT JOIN \"Accounts\" AS \"account\" ON \"account\".\"Id\" = \"utente\".\"AccountId\"")
         });
-
-    /*
-    private static string UserWorkProfileJoin()
-    {
-        return $"""
-            FROM "UserWorkProfileReadOnly" AS "uwp"
-            INNER JOIN (
-                SELECT wp."Id" AS "Id", wp."BrandId" AS "BrandId", wp."Name" AS "Name"
-                FROM "WorkProfiles" AS "wp"
-            ) AS "workprofile" ON "uwp"."WorkProfileId" = "workprofile"."Id"
-            INNER JOIN(
-                SELECT b."Id", b."Name"
-                FROM "Brands" AS "b"
-            ) AS "brand" ON "workprofile"."BrandId" = "brand"."Id"
-            WHERE utente."Id" = "uwp"."UserId"
-        """;
-    }
-    */
 
     private static string UserWorkProfileJoin()
     {

@@ -91,6 +91,7 @@ public sealed class SearchFieldDefinitionResolver
         FieldKind.DateTime => typeof(DateTimeOffset),
         FieldKind.Guid => typeof(Guid),
         FieldKind.Enum => typeof(string), // "enum" documentale senza tipo CLR: trattato come stringa
+        FieldKind.ObjectId => typeof(string), // hex a 24 char: coerciato come stringa, poi BsonObjectId nel translator
         _ => typeof(string)
     };
 }

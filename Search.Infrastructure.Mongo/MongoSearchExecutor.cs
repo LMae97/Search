@@ -131,6 +131,7 @@ public sealed class MongoSearchExecutor<TDocument>
 
         return value.BsonType switch
         {
+            BsonType.ObjectId => value.AsObjectId.ToString(),   // es. "6754248f43ad677b83600fad" (non lo struct {timestamp,...})
             BsonType.String => value.AsString,
             BsonType.Int32 => value.AsInt32,
             BsonType.Int64 => value.AsInt64,

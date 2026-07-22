@@ -1,0 +1,45 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### Ricerca: piani del tenant, per nome; proiezione con audit "label"
+POST {{baseUrl}}/compensation-plans/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "spaceId", "op": "eq", "value": "4ae7781f-28a9-4070-b545-dfeb854c8764" },
+      { "field": "name", "op": "contains", "value": "2024" }
+    ]
+  },
+  "projection": [
+    "id", "name", "description",
+    "createdByValue", "createdByLabel", "createdAt",
+    "updatedByValue", "updatedByLabel", "updatedAt"
+  ],
+  "sort": [
+    { "field": "name", "direction": "Ascending" }
+  ],
+  "page": { "number": 1, "size": 20 }
+}
+
+### Ricerca: nome "contiene" + creati dopo una data
+POST {{baseUrl}}/compensation-plans/search
+Content-Type: {{contentType}}
+
+{
+  "filter": {
+    "and": [
+      { "field": "spaceId", "op": "eq", "value": "4ae7781f-28a9-4070-b545-dfeb854c8764" },
+      { "field": "name", "op": "contains", "value": "premi" },
+      { "field": "createdAt", "op": "gte", "value": "2026-01-01T00:00:00Z" }
+    ]
+  },
+  "projection": [
+    "id", "name", "createdAt", "createdByValue", "createdByLabel"
+  ],
+  "sort": [
+    { "field": "createdAt", "direction": "Descending" }
+  ],
+  "page": { "number": 1, "size": 10 }
+}

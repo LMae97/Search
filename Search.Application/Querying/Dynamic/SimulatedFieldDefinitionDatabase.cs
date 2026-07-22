@@ -152,6 +152,18 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("workProfile", "userNames", FieldKind.String, false, true, "utente.\"Username\""));
         rows.Add(new SearchFieldDefinition("workProfile", "spaceId", FieldKind.Guid, false, false, "workProfile.\"SpaceId\""));
 
+        // === compensationPlan (store documentale Mongo): Path = path del documento (dot-notation) ===
+        rows.Add(new SearchFieldDefinition("compensationPlan", "id", FieldKind.ObjectId, false, false, "_id"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "createdAt", FieldKind.DateTime, false, false, "createdAt"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "updatedAt", FieldKind.DateTime, false, false, "updatedAt"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "createdByValue", FieldKind.Guid, false, false, "createdBy.value", Label: "Creato da (id)"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "createdByLabel", FieldKind.String, false, false, "createdBy.label", Label: "Creato da"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "updatedByValue", FieldKind.Guid, false, false, "updatedBy.value", Label: "Modificato da (id)"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "updatedByLabel", FieldKind.String, false, false, "updatedBy.label", Label: "Modificato da"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "name", FieldKind.String, false, false, "name"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "description", FieldKind.String, false, false, "description"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "spaceId", FieldKind.Guid, false, false, "spaceId"));
+
         return rows;
     }
 }

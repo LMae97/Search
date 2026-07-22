@@ -5,6 +5,8 @@ using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Validation;
 using Search.Api.Serialization;
 using Search.Infrastructure.Sql;
+using Search.Infrastructure.Mongo;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,12 +33,25 @@ builder.Services.AddSingleton<DbBackedSearchMapProvider>();
 // --- Layer di ricerca: un handler per STORE, dietro un facade unico (ISearchService) ---
 // Il facade smista per StoreKind (dal SearchEntityRegistry): un handler serve tutte le entità del suo store.
 builder.Services.AddSingleton<ISearchHandler, SqlSearchHandler>();   // copre tutte le entità PostgresRaw (product, brand, …)
-// Mongo: da abilitare quando l'API avrà una connessione Mongo (+ riferimento a Search.Infrastructure.Mongo). Servono:
-//   builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnectionString));
-//   builder.Services.AddSingleton(sp => sp.GetRequiredService<IMongoClient>().GetDatabase("<db>"));
-//   builder.Services.AddSingleton<IMongoCollectionProvider>(sp => new MongoCollectionProvider(
-//       sp.GetRequiredService<IMongoDatabase>(), new Dictionary<string, string> { ["order"] = "orders" }));
-//   builder.Services.AddSingleton<ISearchHandler, MongoSearchHandler>();
+
+// Mongo: opt-in. Registrato solo se c'è la connection string, così un run solo-SQL non richiede un Mongo attivo.
+// L'handler Mongo copre TUTTE le entità documentali (compensationPlan, …); il mapping entità→collection sta nel provider.
+var mongoConnectionString = builder.Configuration.GetConnectionString("Mongo");
+if (!string.IsNullOrWhiteSpace(mongoConnectionString))
+{
+    var mongoDatabaseName = builder.Configuration.GetValue<string>("Mongo:Database");
+
+    builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnectionString));
+    builder.Services.AddSingleton(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(mongoDatabaseName));
+    builder.Services.AddSingleton<IMongoCollectionProvider>(sp => new MongoCollectionProvider(
+        sp.GetRequiredService<IMongoDatabase>(),
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["compensationPlan"] = "CompensationPlan"
+        }));
+    builder.Services.AddSingleton<ISearchHandler, MongoSearchHandler>();
+}
+
 builder.Services.AddSingleton<ISearchService, SearchService>();
 
 var app = builder.Build();

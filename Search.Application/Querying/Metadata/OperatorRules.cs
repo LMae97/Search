@@ -66,6 +66,7 @@ public static class OperatorRules
 
             case FieldKind.Guid:
             case FieldKind.Enum:
+            case FieldKind.ObjectId:
                 // Uguaglianza + insiemi + nullità: già inclusi.
                 break;
         }
