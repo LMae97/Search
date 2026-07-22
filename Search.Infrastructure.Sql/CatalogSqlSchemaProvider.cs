@@ -12,6 +12,7 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     {
         "customer" => Customer,
         "workprofile" => Workprofile,
+        "utente" => User,
         _ => throw new InvalidOperationException($"Nessuna configurazione SQL per l'entità '{entityName}'.")
     };
 
@@ -28,7 +29,9 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     private static string CustomerTagJoin(params string[] args)
     {
         var select = "\"t\".\"Id\" AS \"Id\"";
+        
         foreach (var arg in args) select += ", " + arg;
+
         return $"""
             FROM "CustomerTag" AS "ct"
             INNER JOIN (
@@ -63,4 +66,27 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
             WHERE workprofile."Id" = "uwp"."WorkProfileId"
         """;
     } 
+
+    private static readonly SqlEntitySchema User = new(
+        from: "FROM \"Users\" AS \"utente\"",
+        joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["workProfile"] = new SqlM2MJoin(UserWorkProfileJoin()),
+        });
+
+    private static string UserWorkProfileJoin()
+    {
+        return $"""
+            FROM "UserWorkProfileReadOnly" AS "uwp"
+            INNER JOIN (
+                SELECT wp."Id" AS "Id", wp."BrandId" AS "BrandId", wp."Name" AS "Name"
+                FROM "WorkProfiles" AS "wp"
+            ) AS "workprofile" ON "uwp"."WorkProfileId" = "workprofile"."Id"
+            INNER JOIN(
+                SELECT b."Id", b."Name"
+                FROM "Brands" AS "b"
+            ) AS "brand" ON "workprofile"."BrandId" = "brand"."Id"
+            WHERE utente."Id" = "uwp"."UserId"
+        """;
+    }
 }

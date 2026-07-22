@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### Ricerca: price >= 10 AND tags ⊇ {sale|novità}, ordinati per prezzo desc
+POST {{baseUrl}}/users/search
+Content-Type: {{contentType}}
+
+{
+  "projection": [
+    "id", "username", "email", 
+    "name", "workProfile"
+  ],
+  "sort": [
+    { "field": "username", "direction": "Ascending" }
+  ],
+  "page": { "number": 1, "size": 70 }
+}

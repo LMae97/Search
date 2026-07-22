@@ -44,6 +44,8 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("product", "tags", FieldKind.String, true, "Tags.Name", Label: "Tag"));
         rows.Add(new SearchFieldDefinition("product", "tagIds", FieldKind.Guid, true, "Tags.Id"));
         */
+
+        /*
         rows.Add(new SearchFieldDefinition("product", "id", FieldKind.Guid, false, false, "\"product\".\"Id\""));
         //sku: aspettiamo
         rows.Add(new SearchFieldDefinition("product", "name", FieldKind.String, false, false, "\"product\".\"Name\""));
@@ -88,8 +90,7 @@ public static class SimulatedFieldDefinitionDatabase
             "(\"brand\".\"Data\" #>> '{metrics,score}')::numeric", Label: "Score (JSON)", Section: "JSON"));
         rows.Add(new SearchFieldDefinition("brand", "dataTags", FieldKind.String, true, true,
             "\"brand\".\"Data\" -> 'tags'", Label: "Tag (JSON)", Section: "JSON"));
-
-        // 
+        */
 
         rows.Add(new SearchFieldDefinition("customer", "id", FieldKind.Guid, false, false, "customer.\"Id\""));
         rows.Add(new SearchFieldDefinition("customer", "businessType", FieldKind.String, false, false, "customer.\"BusinessType\""));
@@ -102,7 +103,7 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("customer", "vatNumber", FieldKind.String, false, false, "customer.\"VatNumber\""));
         rows.Add(new SearchFieldDefinition("customer", "sector", FieldKind.String, false, false, "customer.\"Sector\""));
         rows.Add(new SearchFieldDefinition("customer", "legalCountry", FieldKind.String, true, false, "customer.\"Legal\" ->> 'Country'"));
-        //birthDate, UpdatedAt, CreatedAt
+        rows.Add(new SearchFieldDefinition("customer", "birthDate", FieldKind.DateTime, false, false, "customer.\"BirthDate\""));
         rows.Add(new SearchFieldDefinition("customer", "legalFloor", FieldKind.String, true, false, "customer.\"Legal\" ->> 'Floor'"));
         rows.Add(new SearchFieldDefinition("customer", "legalStreet", FieldKind.String, true, false, "customer.\"Legal\" ->> 'Street'"));
         rows.Add(new SearchFieldDefinition("customer", "legalStreetNumber", FieldKind.String, true, false, "customer.\"Legal\" ->> 'StreetNumber'"));
@@ -132,7 +133,15 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("customer", "createdByName", FieldKind.String, false, false, "\"utenteCreatore\".\"Username\""));
         rows.Add(new SearchFieldDefinition("customer", "updatedById", FieldKind.Guid, false, false, "customer.\"UpdatedById\""));
         rows.Add(new SearchFieldDefinition("customer", "updatedByName", FieldKind.String, false, false, "\"utenteModificatore\".\"Username\""));
+        rows.Add(new SearchFieldDefinition("customer", "updatedAt", FieldKind.DateTime, false, false, "customer.\"UpdatedAt\""));
+        rows.Add(new SearchFieldDefinition("customer", "createdAt", FieldKind.DateTime, false, false, "customer.\"CreatedAt\""));
         rows.Add(new SearchFieldDefinition("customer", "spaceId", FieldKind.Guid, false, false, "customer.\"SpaceId\""));
+
+        rows.Add(new SearchFieldDefinition("utente", "id", FieldKind.Guid, false, false, "utente.\"Id\""));
+        rows.Add(new SearchFieldDefinition("utente", "username", FieldKind.String, false, false, "utente.\"Username\""));
+        rows.Add(new SearchFieldDefinition("utente", "email", FieldKind.String, false, false, "utente.\"Email\""));
+        rows.Add(new SearchFieldDefinition("utente", "name", FieldKind.String, false, false, "utente.\"Name\" || ' ' || utente.\"LastName\""));
+        rows.Add(new SearchFieldDefinition("utente", "workProfile", FieldKind.String, false, true, "brand.\"Name\" || ' (' || workprofile.\"Name\" || ')'"));
 
         rows.Add(new SearchFieldDefinition("workProfile", "id", FieldKind.Guid, false, false, "workProfile.\"Id\""));
         rows.Add(new SearchFieldDefinition("workProfile", "name", FieldKind.String, false, false, "workProfile.\"Name\""));

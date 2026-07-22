@@ -82,3 +82,17 @@ public class WorkProfileEntityConfig : ISearchableEntityConfig
         new SortField("id", SortDirection.Ascending)
     ];
 }
+
+public class UserEntityConfig : ISearchableEntityConfig
+{
+    public SearchEntity SearchEntity => SearchEntity.RelationalRaw("utente");
+    public IReadOnlyList<string> DefaultProjection => [
+        "id",
+        "username",
+        "email"
+    ];
+    public IReadOnlyList<SortField> DefaultSort => [
+        new SortField("username", SortDirection.Ascending),
+        new SortField("id", SortDirection.Ascending)
+    ];
+}
