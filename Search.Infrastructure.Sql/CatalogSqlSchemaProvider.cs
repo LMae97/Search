@@ -22,61 +22,45 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         {
             ["createdByName"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteCreatore\" ON \"utenteCreatore\".\"Id\" = \"customer\".\"CreatedById\""),
             ["updatedByName"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteModificatore\" ON \"utenteModificatore\".\"Id\" = \"customer\".\"UpdatedById\""),
-            ["tagIds"] = new SqlM2MJoin(CustomerTagJoin()),
-            ["tagNames"] = new SqlM2MJoin(CustomerTagJoin("t.\"Name\""))
+            ["tagIds"] = new SqlM2MJoin(CustomerTagJoin),
+            ["tagNames"] = new SqlM2MJoin(CustomerTagJoin)
         });
 
-    private static string CustomerTagJoin(params string[] args)
-    {
-        var select = "\"t\".\"Id\" AS \"Id\"";
-        
-        foreach (var arg in args) select += ", " + arg;
-
-        return $"""
+    private const string CustomerTagJoin = $"""
             FROM "CustomerTag" AS "ct"
             INNER JOIN "Tags" AS "t"
                 ON "ct"."TagId" = "tag"."Id"
                 AND "tag"."SpaceId" = @space
             WHERE customer."Id" = "ct"."CustomerId"
         """;
-    }
 
     private static readonly SqlEntitySchema Workprofile = new(
         from: "FROM \"WorkProfiles\" AS \"workprofile\"",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
             ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"workprofile\".\"BrandId\""),
-            ["userIds"] = new SqlM2MJoin(WorkprofileUserJoin()),
-            ["userNames"] = new SqlM2MJoin(WorkprofileUserJoin("u.\"Username\""))
+            ["userIds"] = new SqlM2MJoin(WorkprofileUserJoin),
+            ["userNames"] = new SqlM2MJoin(WorkprofileUserJoin)
         });
 
-    private static string WorkprofileUserJoin(params string[] args)
-    {
-        var select = "\"u\".\"Id\" AS \"Id\"";
-
-        foreach ( var arg in args ) select += ", " + arg;
-
-        return $"""
+    private const string WorkprofileUserJoin = $"""
             FROM "UserWorkProfile" AS "uwp"
-            INNER JOIN Users" AS "utente" 
+            INNER JOIN "Users" AS "utente"
                 ON "uwp"."UserId" = "utente"."Id"
                 AND "utente"."SpaceId" = @space
             WHERE workprofile."Id" = "uwp"."WorkProfileId"
         """;
-    } 
 
     private static readonly SqlEntitySchema User = new(
         from: "FROM \"Users\" AS \"utente\"",
         basePredicate: "utente.\"SpaceId\" = @space AND utente.\"SoftDeleted\" = FALSE",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
-            ["workProfile"] = new SqlM2MJoin(UserWorkProfileJoin()),
+            ["workProfile"] = new SqlM2MJoin(UserWorkProfileJoin),
             ["accountEmail"] = new SqlSimpleJoin("LEFT JOIN \"Accounts\" AS \"account\" ON \"account\".\"Id\" = \"utente\".\"AccountId\"")
         });
 
-    private static string UserWorkProfileJoin()
-    {
-        return $"""
+    private const string UserWorkProfileJoin = $"""
             FROM "UserWorkProfileReadOnly" AS "uwp"
             INNER JOIN "WorkProfiles" AS "workprofile"
                 ON "uwp"."WorkProfileId" = "workprofile"."Id"
@@ -86,5 +70,4 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
                 AND "brand"."SpaceId" = @space
             WHERE utente."Id" = "uwp"."UserId"
         """;
-    }
 }

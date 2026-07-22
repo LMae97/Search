@@ -24,9 +24,12 @@ public sealed class MongoSearchExecutor<TDocument>
     }
 
     public SearchResult<IReadOnlyDictionary<string, object?>> Execute(IMongoCollection<TDocument> collection, SearchRequest request)
-    {
-        var plan = BuildPlan(request);
+        => Execute(collection, BuildPlan(request), request.Page);
 
+    /// <summary>Esegue un piano già costruito (utile a chi vuole prima ispezionarlo/loggarlo).</summary>
+    public SearchResult<IReadOnlyDictionary<string, object?>> Execute(
+        IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
+    {
         var total = collection.CountDocuments(plan.Filter);
 
         var find = collection.Find(plan.Filter);
@@ -43,7 +46,7 @@ public sealed class MongoSearchExecutor<TDocument>
             .Select(doc => (IReadOnlyDictionary<string, object?>)MapRecord(doc, plan.Fields))
             .ToList();
 
-        return new SearchResult<IReadOnlyDictionary<string, object?>>(items, total, request.Page.Number, request.Page.Size);
+        return new SearchResult<IReadOnlyDictionary<string, object?>>(items, total, page.Number, page.Size);
     }
 
     /// <summary>Costruisce la query Mongo senza eseguirla (per ispezione/test).</summary>
