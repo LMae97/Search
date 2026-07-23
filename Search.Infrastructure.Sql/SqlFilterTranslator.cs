@@ -1,4 +1,5 @@
 using Search.Application.Querying.Filters;
+using Search.Application.Querying.Linq;
 using Search.Application.Querying.Metadata;
 
 namespace Search.Infrastructure.Sql;
@@ -149,27 +150,22 @@ public sealed class SqlFilterTranslator
 
     // --- Parametri: i valori utente non si interpolano mai. Nome posizionale @p0, @p1, … -----------
 
+    // Stessa coercizione di LINQ/Mongo (invariant culture inclusa): un solo punto di verità sui tipi.
+    // Unica specializzazione SQL: la data è troncata al giorno (voluto — i filtri "data" qui non
+    // distinguono l'orario), a differenza degli altri store che portano l'istante completo.
     private static object? ParseValue(object? value, Type type)
     {
         if (value is null)
             return null;
-        if (type == typeof(string))
-            return value.ToString();
-        if (type == typeof(int))
-            return Convert.ToInt32(value);
-        if (type == typeof(long))
-            return Convert.ToInt64(value);
-        if (type == typeof(decimal))
-            return Convert.ToDecimal(value);
-        if (type == typeof(double))
-            return Convert.ToDouble(value);
-        if (type == typeof(bool))
-            return Convert.ToBoolean(value);
-        if (type == typeof(DateTime))
-            return Convert.ToDateTime(value);
-        if (type == typeof(Guid))
-            return Guid.Parse(value.ToString()!);
-        throw new NotSupportedException($"Tipo di campo non supportato: {type.Name}.");
+        if (type == typeof(DateTime) || type == typeof(DateTimeOffset))
+            return ConvertToDateTime(value);
+        return ValueCoercion.Coerce(value, type);
+    }
+
+    private static DateTime ConvertToDateTime(object? value)
+    {
+        var coerced = (DateTimeOffset)ValueCoercion.Coerce(value, typeof(DateTimeOffset))!;
+        return DateTime.SpecifyKind(coerced.UtcDateTime.Date, DateTimeKind.Utc);
     }
 
     private static string Param(List<object?> parameters, object? value, FieldDescriptor field)

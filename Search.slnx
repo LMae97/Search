@@ -3,4 +3,5 @@
   <Project Path="Search.Application/Search.Application.csproj" />
   <Project Path="Search.Infrastructure.Mongo/Search.Infrastructure.Mongo.csproj" />
   <Project Path="Search.Infrastructure.Sql/Search.Infrastructure.Sql.csproj" />
+  <Project Path="Search.Tests/Search.Tests.csproj" />
 </Solution>

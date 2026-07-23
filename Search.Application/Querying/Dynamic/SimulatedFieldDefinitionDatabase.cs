@@ -143,6 +143,7 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("utente", "name", FieldKind.String, false, false, "utente.\"Name\" || ' ' || utente.\"LastName\""));
         rows.Add(new SearchFieldDefinition("utente", "workProfile", FieldKind.String, false, true, "brand.\"Name\" || ' (' || workprofile.\"Name\" || ')'"));
         rows.Add(new SearchFieldDefinition("utente", "accountEmail", FieldKind.String, false, false, "account.\"Email\""));
+        rows.Add(new SearchFieldDefinition("utente", "spaceId", FieldKind.Guid, false, false, "utente.\"SpaceId\""));
 
         rows.Add(new SearchFieldDefinition("workProfile", "id", FieldKind.Guid, false, false, "workProfile.\"Id\""));
         rows.Add(new SearchFieldDefinition("workProfile", "name", FieldKind.String, false, false, "workProfile.\"Name\""));
