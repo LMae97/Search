@@ -6,12 +6,13 @@ POST {{baseUrl}}/work-profiles/search
 Content-Type: {{contentType}}
 
 {
+  "search": "aur",
   "filter": {
     "and": [
-      { "field": "spaceId", "op": "eq", "value": "9f1b1317-9780-4aeb-a037-1e80957149ae" }
+      { "field": "spaceId", "op": "eq", "value": "4ae7781f-28a9-4070-b545-dfeb854c8764" }
     ]
   },
-  "projection": ["id", "name", "userNames", "userIds", "spaceId"],
+  "projection": ["id", "name", "userNames", "userIds", "spaceId", "brandName"],
   "sort": [
     { "field": "brandName", "direction": "Ascending" }
   ],

@@ -4,7 +4,7 @@ using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
 
-namespace Search.Api.Controllers;
+namespace Search.Api.Controllers.WorkProfile;
 
 [ApiController]
 [Route("work-profiles")]
@@ -21,15 +21,16 @@ public sealed class WorkProfileController : ControllerBase
     }
 
     [HttpPost("search")]
-    public IActionResult Search(SearchRequest request)
+    public IActionResult Search(WorkProfileSearchRequest request)
     {
         var caller = new SearchCaller(
             SimulatedFieldDefinitionDatabase.DemoSpace,
             new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
 
         var entityConfig = new WorkProfileEntityConfig();
+        var adapterRequest = WorkProfileSearchRequestAdapter.Adapt(request);
 
-        var result = _search.Search(entityConfig, request, caller);
+        var result = _search.Search(entityConfig, adapterRequest, caller);
 
         return Ok(new { result.Items, result.TotalCount, result.PageNumber, result.PageSize });
     }

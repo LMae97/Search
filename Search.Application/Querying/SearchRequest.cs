@@ -21,7 +21,7 @@ namespace Search.Application.Querying;
 /// Richiesta di ricerca completa: filtro + proiezione + ordinamento + paginazione.
 /// È il contratto unico che vale per ogni entità e per entrambi gli store.
 /// </summary>
-public sealed class SearchRequest
+public class SearchRequest
 {
     /// <summary>Albero di filtri. Null = nessun filtro (tutti i record).</summary>
     public FilterNode? Filter { get; init; }
