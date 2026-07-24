@@ -4,6 +4,7 @@ namespace Search.Application.Querying.Filters;
 /// Operatori applicabili a un campo. Quali siano ammessi per uno specifico campo dipende dal
 /// suo tipo e dall'essere array: la decisione sta nel metadata registry, non qui.
 /// </summary>
+
 public enum FilterOperator
 {
     // Uguaglianza (tutti i tipi)

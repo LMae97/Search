@@ -161,8 +161,8 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("compensationPlan", "createdByLabel", FieldKind.String, false, false, "createdBy.label", Label: "Creato da"));
         rows.Add(new SearchFieldDefinition("compensationPlan", "updatedByValue", FieldKind.String, false, false, "updatedBy.value", Label: "Modificato da (id)"));
         rows.Add(new SearchFieldDefinition("compensationPlan", "updatedByLabel", FieldKind.String, false, false, "updatedBy.label", Label: "Modificato da"));
-        rows.Add(new SearchFieldDefinition("compensationPlan", "name", FieldKind.String, false, false, "name"));
-        rows.Add(new SearchFieldDefinition("compensationPlan", "description", FieldKind.String, false, false, "description"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "name", FieldKind.String, false, false, "name", IsSearchable: true));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "description", FieldKind.String, false, false, "description", IsSearchable: true));
         rows.Add(new SearchFieldDefinition("compensationPlan", "spaceId", FieldKind.String, false, false, "spaceId"));
 
         return rows;

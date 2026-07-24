@@ -28,9 +28,10 @@ internal static class TestSupport
     /// <summary>Scorciatoia per una definizione di campo (l'ordine posizionale del record è verboso).</summary>
     public static SearchFieldDefinition Def(
         string entity, string name, FieldKind kind, string path,
-        bool isArray = false, bool json = false, int? defaultOrder = null, Guid? permission = null)
+        bool isArray = false, bool json = false, int? defaultOrder = null, Guid? permission = null,
+        bool searchable = false)
         => new(entity, name, kind, json, isArray, path,
-            DefaultOrder: defaultOrder, RequiredPermissionId: permission);
+            DefaultOrder: defaultOrder, RequiredPermissionId: permission, IsSearchable: searchable);
 }
 
 /// <summary>Entità CLR di prova per il path selector-based (store EF / esecuzione LINQ in-memory).</summary>

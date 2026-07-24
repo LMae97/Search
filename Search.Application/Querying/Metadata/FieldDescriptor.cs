@@ -57,6 +57,13 @@ public sealed class FieldDescriptor
     /// </summary>
     public Guid? RequiredPermissionId { get; }
 
+    /// <summary>
+    /// Se il campo partecipa alla ricerca full-text libera (<c>SearchRequest.Search</c>). È metadato
+    /// store-agnostic: ogni store decide come usarlo (Mongo → path di un <c>$search</c> Atlas; SQL → colonna
+    /// di un <c>ILIKE</c>). Non c'entra con gli operatori del filtro puntuale.
+    /// </summary>
+    public bool IsSearchable { get; init; }
+
     private FieldDescriptor(
         string name,
         FieldKind kind,
@@ -95,12 +102,14 @@ public sealed class FieldDescriptor
         int? defaultOrder,
         bool isHidden,
         Guid? requiredPermissionId,
-        IReadOnlySet<FilterOperator> allowedOperators)
+        IReadOnlySet<FilterOperator> allowedOperators,
+        bool isSearchable = false)
     {
         return new FieldDescriptor(name, kind, isArray, clrType, jsonColumn, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
-            StoragePath = storagePath
+            StoragePath = storagePath,
+            IsSearchable = isSearchable
         };
     }
 
@@ -116,12 +125,14 @@ public sealed class FieldDescriptor
         int? defaultOrder,
         bool isHidden,
         Guid? requiredPermissionId,
-        IReadOnlySet<FilterOperator> allowedOperators)
+        IReadOnlySet<FilterOperator> allowedOperators,
+        bool isSearchable = false)
     {
         return new FieldDescriptor(name, kind, isArray, clrType, jsonColumn, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
-            Selector = selector
+            Selector = selector,
+            IsSearchable = isSearchable
         };
     }
 

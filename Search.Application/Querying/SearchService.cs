@@ -35,6 +35,15 @@ public interface ISearchHandler
 /// </summary>
 public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearchHandler
 {
+    /** FLUSSO 
+     *   SearchHandlerBase.Search
+     *     ├─ mappa effettiva → sanitize → validate
+     *     ├─ FreeTextExpansion.Apply(config.FreeText, map, request)
+     *     │     ├─ OrContains → Search diventa Or(Contains…) dentro Filter, Search=null
+     *     │     └─ Atlas      → Search resta intatto
+     *     └─ Execute(config, map, prepared, spaceId)
+     *           └─ Mongo: se Search ancora valorizzato → $search; altrimenti find (col filtro espanso)
+     */
     public abstract StoreKind Store { get; }
 
     public SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
@@ -42,11 +51,15 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
         var map = maps.GetEffectiveMap(config.SearchEntity, caller);
         var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
-        return Execute(config.SearchEntity.Name, map, sanitized, caller.SpaceId);
+
+        // Free-text → filtro (OrContains) oppure lasciato allo store (Atlas). Post-validazione, come il tenant scope.
+        var prepared = SearchTextExpansion.Apply(config.FreeText, map, sanitized);
+
+        return Execute(config, map, prepared, caller.SpaceId);
     }
 
-    /// <summary>Esegue la richiesta già sanificata/validata contro lo store concreto.</summary>
-    protected abstract SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request, Guid spaceId);
+    /// <summary>Esegue la richiesta già sanificata/validata/espansa contro lo store concreto.</summary>
+    protected abstract SearchResult<IReadOnlyDictionary<string, object?>> Execute(ISearchableEntityConfig config, IEntitySearchMap map, SearchRequest request, Guid spaceId);
 }
 
 /// <summary>

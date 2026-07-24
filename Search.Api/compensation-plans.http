@@ -7,6 +7,7 @@ POST {{baseUrl}}/compensation-plans/search
 Content-Type: {{contentType}}
 
 {
+  "search": "Acea",
   "filter": {
     "and": [
       { "field": "name", "op": "contains", "value": "2024" }

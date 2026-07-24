@@ -13,10 +13,11 @@ public sealed class MongoSearchExecutorTests
     private const string E = "compensationPlan";
 
     private static MongoSearchExecutor<BsonDocument> Executor() => new(Map(
-        SearchEntity.Document(E), 
+        SearchEntity.Document(E),
         Caller(),
         Def(E, "id", FieldKind.ObjectId, "_id"),
-        Def(E, "name", FieldKind.String, "name"),
+        Def(E, "name", FieldKind.String, "name", searchable: true),
+        Def(E, "description", FieldKind.String, "description", searchable: true),
         Def(E, "createdAt", FieldKind.DateTime, "createdAt")));
 
     [Fact]
@@ -65,5 +66,51 @@ public sealed class MongoSearchExecutorTests
 
         Assert.Equal(20, plan.Skip); // (3-1)*10
         Assert.Equal(10, plan.Limit);
+    }
+
+    // ---------------------------------------------------------------- free-text (Atlas $search)
+
+    [Fact]
+    public void No_free_text_means_no_search_stage()
+    {
+        var plan = Executor().BuildPlan(new SearchRequest { Projection = ["name"] });
+
+        Assert.Null(plan.SearchStage); // → l'executor userà la find classica
+    }
+
+    [Fact]
+    public void Free_text_builds_a_compound_should_over_every_searchable_field()
+    {
+        var plan = Executor().BuildPlan(new SearchRequest { Search = "mario", Projection = ["name"] });
+
+        Assert.NotNull(plan.SearchStage);
+        var search = plan.SearchStage!["$search"].AsBsonDocument;
+        var should = search["compound"]["should"].AsBsonArray;
+
+        // un ramo autocomplete per ogni campo searchable (name, description), tutti sulla stessa query
+        Assert.Equal(2, should.Count);
+        Assert.Equal(1, search["compound"]["minimumShouldMatch"].AsInt32);
+        Assert.Equal("mario", should[0]["autocomplete"]["query"].AsString);
+        var paths = should.Select(b => b["autocomplete"]["path"].AsString).ToList();
+        Assert.Contains("name", paths);
+        Assert.Contains("description", paths);
+    }
+
+    [Fact]
+    public void Free_text_without_explicit_sort_leaves_ordering_to_relevance()
+    {
+        var plan = Executor().BuildPlan(new SearchRequest { Search = "mario", Projection = ["name"] });
+
+        Assert.Null(plan.Sort); // niente $sort → ordina lo score di Atlas
+    }
+
+    [Fact]
+    public void Multi_token_query_asks_for_sequential_token_order()
+    {
+        var plan = Executor().BuildPlan(new SearchRequest { Search = "  mario   rossi  ", Projection = ["name"] });
+
+        var should = plan.SearchStage!["$search"]["compound"]["should"].AsBsonArray;
+        Assert.Equal("mario rossi", should[0]["autocomplete"]["query"].AsString); // spazi collassati
+        Assert.Equal("sequential", should[0]["autocomplete"]["tokenOrder"].AsString);
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Metadata;
@@ -18,8 +19,9 @@ public sealed class SqlSearchHandler(
 {
     public override StoreKind Store => StoreKind.PostgresRaw;
 
-    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request, Guid spaceId)
+    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(ISearchableEntityConfig config, IEntitySearchMap map, SearchRequest request, Guid spaceId)
     {
+        var entityName = config.SearchEntity.Name;
         var builder = new SqlSearchQueryBuilder(map, schemas.GetSchema(entityName));
         var executor = new SqlSearchExecutor();
 

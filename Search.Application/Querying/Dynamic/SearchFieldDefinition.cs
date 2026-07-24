@@ -22,4 +22,5 @@ public sealed record SearchFieldDefinition(
     int? DefaultOrder = null,           // proiezione -> ordine di proiezione fallback (null = non proiettato di default)
     bool IsHidden = false,              // proiezione -> se il campo è nascosto (non proiettabile. Rimane filtrabile/ordinabile)
     Guid? RequiredPermissionId = null,
-    Guid? SpaceId = null);
+    Guid? SpaceId = null,
+    bool IsSearchable = false);         // full-text: se il campo partecipa alla ricerca libera (SearchRequest.Search)

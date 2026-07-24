@@ -9,4 +9,9 @@ public interface ISearchableEntityConfig
     IReadOnlyList<string> DefaultProjection { get; }
     IReadOnlyList<SortField> DefaultSort { get; }
 
+    /// <summary>
+    /// Come tradurre il free-text (<c>SearchRequest.Search</c>). Default: OR di contains (universale).
+    /// Le entità che vogliono Atlas fanno override con <see cref="FreeTextSearch.Atlas"/>.
+    /// </summary>
+    FreeTextSearch FreeText => FreeTextSearch.OrContains;
 }

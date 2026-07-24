@@ -14,20 +14,39 @@ namespace Search.Infrastructure.Mongo;
 /// </summary>
 public sealed class MongoSearchExecutor<TDocument>
 {
+    /// <summary>
+    /// Nome dell'indice Atlas Search usato dallo stage <c>$search</c>. "default" è la convenzione di Atlas;
+    /// in futuro andrà reso configurabile per-entità (oggi è uno solo per lo slice di valutazione).
+    /// </summary>
+    private const string DefaultAtlasIndex = "default";
+
     private readonly IEntitySearchMap _map;
     private readonly MongoFilterTranslator<TDocument> _filterTranslator;
+    private readonly string _atlasIndex;
 
-    public MongoSearchExecutor(IEntitySearchMap map)
+    public MongoSearchExecutor(IEntitySearchMap map, string atlasIndex = DefaultAtlasIndex)
     {
         _map = map;
         _filterTranslator = new MongoFilterTranslator<TDocument>(map);
+        _atlasIndex = atlasIndex;
     }
 
     public SearchResult<IReadOnlyDictionary<string, object?>> Execute(IMongoCollection<TDocument> collection, SearchRequest request)
         => Execute(collection, BuildPlan(request), request.Page);
 
-    /// <summary>Esegue un piano già costruito (utile a chi vuole prima ispezionarlo/loggarlo).</summary>
+    /// <summary>
+    /// Esegue un piano già costruito (utile a chi vuole prima ispezionarlo/loggarlo). Sceglie il percorso in
+    /// base al piano: se c'è free-text (<see cref="MongoQueryPlan.SearchStage"/>) serve la <b>aggregation</b>
+    /// perché <c>$search</c> deve essere il primo stage; altrimenti la <c>find</c> classica, più economica.
+    /// </summary>
     public SearchResult<IReadOnlyDictionary<string, object?>> Execute(
+        IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
+        => plan.SearchStage is null
+            ? ExecuteFind(collection, plan, page)
+            : ExecuteSearch(collection, plan, page);
+
+    // Percorso classico: filtro puntuale, nessun free-text.
+    private SearchResult<IReadOnlyDictionary<string, object?>> ExecuteFind(
         IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
     {
         var total = collection.CountDocuments(plan.Filter);
@@ -42,6 +61,42 @@ public sealed class MongoSearchExecutor<TDocument>
             .Project<BsonDocument>(plan.Projection)
             .ToList();
 
+        return Build(documents, plan, page, total);
+    }
+
+    // Percorso Atlas Search: $search (obbligatoriamente primo) → $match (filtro puntuale + tenant) → ordinamento
+    // → paginazione → proiezione. Il conteggio è una pipeline gemella che termina con $count (CountDocuments
+    // non vede lo stage $search).
+    private SearchResult<IReadOnlyDictionary<string, object?>> ExecuteSearch(
+        IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
+    {
+        var prelude = new List<BsonDocument> { plan.SearchStage! };
+        if (plan.Filter.ElementCount > 0)
+            prelude.Add(new BsonDocument("$match", plan.Filter));
+
+        var countPipeline = new List<BsonDocument>(prelude) { new BsonDocument("$count", "total") };
+        var countDoc = collection
+            .Aggregate<BsonDocument>(PipelineDefinition<TDocument, BsonDocument>.Create(countPipeline))
+            .FirstOrDefault();
+        var total = countDoc is null ? 0 : countDoc["total"].ToInt64();
+
+        var dataPipeline = new List<BsonDocument>(prelude);
+        if (plan.Sort is not null)
+            dataPipeline.Add(new BsonDocument("$sort", plan.Sort)); // sort esplicito; se assente vince la rilevanza Atlas
+        dataPipeline.Add(new BsonDocument("$skip", plan.Skip));
+        dataPipeline.Add(new BsonDocument("$limit", plan.Limit));
+        dataPipeline.Add(new BsonDocument("$project", plan.Projection));
+
+        var documents = collection
+            .Aggregate<BsonDocument>(PipelineDefinition<TDocument, BsonDocument>.Create(dataPipeline))
+            .ToList();
+
+        return Build(documents, plan, page, total);
+    }
+
+    private static SearchResult<IReadOnlyDictionary<string, object?>> Build(
+        List<BsonDocument> documents, MongoQueryPlan plan, PageRequest page, long total)
+    {
         var items = documents
             .Select(doc => (IReadOnlyDictionary<string, object?>)MapRecord(doc, plan.Fields))
             .ToList();
@@ -56,10 +111,55 @@ public sealed class MongoSearchExecutor<TDocument>
             ? new BsonDocument()
             : _filterTranslator.BuildFilterDocument(request.Filter);
 
+        var searchStage = BuildSearchStage(request.Search);
         var (projection, fields) = BuildProjection(request.Projection);
-        var sort = BuildSort(request.Sort);
+        // Con free-text e senza sort esplicito lasciamo ordinare per rilevanza (nessuno $sort); altrimenti
+        // vale il default deterministico (id/createdAt) come per gli altri store.
+        var sort = BuildSort(request.Sort, relevanceDefault: searchStage is not null);
 
-        return new MongoQueryPlan(filter, projection, sort, request.Page.Skip, request.Page.Size, fields);
+        return new MongoQueryPlan(filter, projection, sort, request.Page.Skip, request.Page.Size, fields, searchStage);
+    }
+
+    // Free-text → stage $search Atlas: un compound/should di "autocomplete", uno per ogni campo IsSearchable,
+    // con minimumShouldMatch=1 (basta che il testo matchi UN campo). Null se non c'è testo o nessun campo è
+    // searchable → l'executor ricade sulla find. È QUI che il concetto store-agnostico "Search" diventa Atlas:
+    // gli altri store lo tradurranno a modo loro senza toccare questo codice.
+    private BsonDocument? BuildSearchStage(string? searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return null;
+
+        var paths = _map.Fields.Values
+            .Where(f => f.IsSearchable && f.StoragePath is not null)
+            .Select(f => f.StoragePath!)
+            .ToList();
+
+        if (paths.Count == 0)
+            return null;
+
+        var query = NormalizeQuery(searchText);
+        var multiToken = query.Contains(' ');
+
+        var should = new BsonArray(paths.Select(path =>
+        {
+            var autocomplete = new BsonDocument { { "path", path }, { "query", query } };
+            if (multiToken)
+                autocomplete.Add("tokenOrder", "sequential"); // i token nell'ordine dato (come il vecchio progetto)
+            return new BsonDocument("autocomplete", autocomplete);
+        }));
+
+        var compound = new BsonDocument("should", should).Add("minimumShouldMatch", 1);
+        return new BsonDocument("$search",
+            new BsonDocument { { "index", _atlasIndex }, { "compound", compound } });
+    }
+
+    // Trim + collapse degli spazi interni + clip di sicurezza sulla lunghezza. Punto di partenza: la
+    // normalizzazione fine (suffissi societari, caratteri speciali) del vecchio progetto si aggiunge qui.
+    private static string NormalizeQuery(string raw)
+    {
+        var collapsed = string.Join(' ', raw.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        const int maxLength = 100;
+        return collapsed.Length > maxLength ? collapsed[..maxLength] : collapsed;
     }
 
     private (BsonDocument Projection, IReadOnlyList<(string Name, string Path)> Fields) BuildProjection(IReadOnlyList<string> projection)
@@ -83,10 +183,14 @@ public sealed class MongoSearchExecutor<TDocument>
         return (document, fields);
     }
 
-    private BsonDocument? BuildSort(IReadOnlyList<SortField> sorts)
+    private BsonDocument? BuildSort(IReadOnlyList<SortField> sorts, bool relevanceDefault = false)
     {
         if (sorts.Count == 0)
         {
+            // Con free-text senza sort esplicito: nessuno $sort, ordina la rilevanza di Atlas.
+            if (relevanceDefault)
+                return null;
+
             // Nessun sort esplicito → default deterministico (id/createdAt) se l'entità ce l'ha, come gli altri store.
             var def = _map.DefaultSortField();
             return def is null ? null : new BsonDocument { [PathOf(def.Name)] = 1 };
@@ -149,10 +253,12 @@ public sealed class MongoSearchExecutor<TDocument>
 }
 
 /// <summary>Query Mongo costruita dal motore (per esecuzione o ispezione).</summary>
+/// <param name="SearchStage">Stage <c>$search</c> Atlas quando c'è free-text; null = ricerca via <c>find</c>.</param>
 public sealed record MongoQueryPlan(
     BsonDocument Filter,
     BsonDocument Projection,
     BsonDocument? Sort,
     int Skip,
     int Limit,
-    IReadOnlyList<(string Name, string Path)> Fields);
+    IReadOnlyList<(string Name, string Path)> Fields,
+    BsonDocument? SearchStage = null);

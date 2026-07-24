@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Dynamic;
 using Search.Application.Querying.Filters;
@@ -22,19 +23,23 @@ public sealed class MongoSearchHandler(
     /// <summary>Nome convenzionale del campo tenant; se presente nella mappa, la ricerca è confinata al suo valore.</summary>
     private const string TenantField = "spaceId";
 
-    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(string entityName, IEntitySearchMap map, SearchRequest request, Guid spaceId)
+    protected override SearchResult<IReadOnlyDictionary<string, object?>> Execute(ISearchableEntityConfig config, IEntitySearchMap map, SearchRequest request, Guid spaceId)
     {
-        var collection = collections.GetCollection(entityName);
+        var collection = collections.GetCollection(config.SearchEntity.Name);
         var scoped = ApplyTenantScope(map, request, spaceId);
 
-        var executor = new MongoSearchExecutor<BsonDocument>(map);
+        // L'indice Atlas viene dalla config d'entità; per le entità OrContains resta inutilizzato (Search è già
+        // stato espanso in filtro a monte, quindi il piano non produrrà alcuno stage $search).
+        var atlasIndex = config.FreeText.AtlasIndex ?? "default";
+        var executor = new MongoSearchExecutor<BsonDocument>(map, atlasIndex);
         var plan = executor.BuildPlan(scoped);
 
         logger.LogInformation(
-            "Mongo query su '{Collection}':\nfilter: {Filter}\nsort: {Sort}\nprojection: {Projection}\nskip {Skip}, limit {Limit}",
+            "Mongo query su '{Collection}':\nsearch: {Search}\nfilter: {Filter}\nsort: {Sort}\nprojection: {Projection}\nskip {Skip}, limit {Limit}",
             collection.CollectionNamespace.CollectionName,
+            plan.SearchStage?.ToJson() ?? "(nessuno)",
             plan.Filter.ToJson(),
-            plan.Sort?.ToJson() ?? "(default)",
+            plan.Sort?.ToJson() ?? "(rilevanza/default)",
             plan.Projection.ToJson(),
             plan.Skip,
             plan.Limit);
@@ -55,6 +60,7 @@ public sealed class MongoSearchHandler(
 
         return new SearchRequest
         {
+            Search = request.Search,
             Filter = combined,
             Projection = request.Projection,
             Sort = request.Sort,

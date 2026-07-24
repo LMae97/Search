@@ -56,7 +56,8 @@ public sealed class SearchFieldDefinitionResolver
             defaultOrder: definition.DefaultOrder,
             isHidden: definition.IsHidden,
             requiredPermissionId: definition.RequiredPermissionId,
-            allowedOperators: OperatorRules.DefaultFor(kind, definition.IsArray)
+            allowedOperators: OperatorRules.DefaultFor(kind, definition.IsArray),
+            isSearchable: definition.IsSearchable
         );
     }
 
@@ -78,7 +79,8 @@ public sealed class SearchFieldDefinitionResolver
             defaultOrder: definition.DefaultOrder,
             isHidden: definition.IsHidden,
             requiredPermissionId: definition.RequiredPermissionId,
-            allowedOperators: OperatorRules.DefaultFor(definition.Kind, definition.IsArray)
+            allowedOperators: OperatorRules.DefaultFor(definition.Kind, definition.IsArray),
+            isSearchable: definition.IsSearchable
         );
     }
 
