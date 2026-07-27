@@ -1,16 +1,11 @@
 using System.Data.Common;
-using Microsoft.Extensions.Logging;
 
-namespace Search.Infrastructure.Sql;
+namespace Search.Sql;
 
 /// <summary>
 /// Esegue un <see cref="SqlQueryPlan"/> parametrizzato su una qualsiasi connessione ADO.NET
 /// (<see cref="System.Data.Common.DbConnection"/>): in produzione Postgres/Npgsql. Nessun ORM, nessun
 /// modello: le righe tornano come dizionari campo→valore, coerenti con gli altri executor.
-/// <para>
-/// Se gli viene passato un <see cref="ILogger"/> logga l'SQL e i parametri di ogni comando (come il
-/// command-logging di EF). Il livello si regola per categoria in appsettings (<c>Search.Infrastructure.Sql.SqlSearchExecutor</c>).
-/// </para>
 /// </summary>
 public sealed class SqlSearchExecutor()
 {

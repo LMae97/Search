@@ -1,6 +1,6 @@
-using Search.Application.Querying.Metadata;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Dynamic;
+namespace Search.Core.Dynamic;
 
 /// <summary>
 /// Trasforma una <see cref="SearchFieldDefinition"/> in un <see cref="FieldDescriptor"/> eseguibile,

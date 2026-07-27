@@ -1,8 +1,7 @@
-using Search.Application.Config;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
+﻿using Search.Core.Filters;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying;
+namespace Search.Core;
 
 /// <summary>
 /// Traduce il free-text (<see cref="SearchRequest.Search"/>) secondo la strategia dell'entità, PRIMA che la

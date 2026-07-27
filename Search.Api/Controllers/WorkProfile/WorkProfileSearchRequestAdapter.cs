@@ -1,5 +1,5 @@
-﻿using Search.Application.Querying;
-using Search.Application.Querying.Filters;
+using Search.Core;
+using Search.Core.Filters;
 
 namespace Search.Api.Controllers.WorkProfile;
 

@@ -1,8 +1,7 @@
-using Search.Application.Config;
-using Search.Application.Querying;
-using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
+using Search.Core;
+using Search.Core.Dynamic;
+using Search.Core.Filters;
+using Search.Core.Metadata;
 using System.ComponentModel;
 using static Search.Tests.TestSupport;
 

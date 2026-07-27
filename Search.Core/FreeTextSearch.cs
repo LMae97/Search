@@ -1,4 +1,4 @@
-namespace Search.Application.Config;
+﻿namespace Search.Core;
 
 /// <summary>Come un'entità interpreta la ricerca full-text libera (<c>SearchRequest.Search</c>).</summary>
 public enum SearchTextMode

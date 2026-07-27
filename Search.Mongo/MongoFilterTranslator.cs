@@ -1,10 +1,10 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Linq;
-using Search.Application.Querying.Metadata;
+using Search.Core.Filters;
+using Search.Core.Metadata;
+using Search.Core.Metadata;
 
-namespace Search.Infrastructure.Mongo;
+namespace Search.Mongo;
 
 /// <summary>
 /// Traduce lo <b>stesso</b> albero di filtri in una query MongoDB (<see cref="FilterDefinition{TDocument}"/>).

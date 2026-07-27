@@ -1,8 +1,8 @@
-using Search.Application.Querying;
-using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
-using Search.Application.Querying.Validation;
+using Search.Core;
+using Search.Core.Dynamic;
+using Search.Core.Filters;
+using Search.Core.Metadata;
+using Search.Core.Validation;
 using static Search.Tests.TestSupport;
 
 namespace Search.Tests;

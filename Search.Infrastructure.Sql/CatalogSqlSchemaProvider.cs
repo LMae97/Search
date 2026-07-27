@@ -1,3 +1,5 @@
+using Search.Sql;
+
 namespace Search.Infrastructure.Sql;
 
 /// <summary>

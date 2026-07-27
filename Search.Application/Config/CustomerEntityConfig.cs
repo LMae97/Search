@@ -1,5 +1,5 @@
-﻿using Search.Application.Querying;
-using Search.Application.Querying.Dynamic;
+using Search.Core;
+using Search.Core.Dynamic;
 
 namespace Search.Application.Config;
 

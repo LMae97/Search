@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;

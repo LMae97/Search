@@ -1,11 +1,9 @@
 using MongoDB.Driver;
-using Search.Application.Config;
-using Search.Application.Querying;
-using Search.Application.Querying.Authorization;
-using Search.Application.Querying.Metadata;
-using Search.Application.Querying.Validation;
+using Search.Core;
+using Search.Core.Metadata;
+using Search.Core.Validation;
 
-namespace Search.Infrastructure.Mongo;
+namespace Search.Mongo;
 
 /// <summary>
 /// Ingresso "senza cerimonie" per chi vuole solo cercare su una collection: mappa + richiesta → risultati, in

@@ -1,6 +1,6 @@
-using Search.Application.Querying.Filters;
+using Search.Core.Filters;
 
-namespace Search.Application.Querying.Metadata;
+namespace Search.Core.Metadata;
 
 /// <summary>
 /// Regole tipo→operatore: dato il <see cref="FieldKind"/> e l'essere array, quali operatori

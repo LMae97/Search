@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Search.Application.Querying.Filters;
+using Search.Core.Filters;
 
 namespace Search.Api.Serialization;
 

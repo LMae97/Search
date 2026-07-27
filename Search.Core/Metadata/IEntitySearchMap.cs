@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Search.Application.Querying.Metadata;
+namespace Search.Core.Metadata;
 
 /// <summary>
 /// Mappa di ricerca di un'entità: l'insieme dei campi esposti e le loro regole.

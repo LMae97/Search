@@ -1,4 +1,4 @@
-﻿using Search.Application.Querying;
+using Search.Core;
 
 namespace Search.Api.Controllers.WorkProfile;
 

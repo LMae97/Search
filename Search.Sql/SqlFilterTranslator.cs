@@ -1,8 +1,8 @@
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Linq;
-using Search.Application.Querying.Metadata;
+using Search.Core.Filters;
+using Search.Core.Metadata;
+using Search.Core.Metadata;
 
-namespace Search.Infrastructure.Sql;
+namespace Search.Sql;
 
 /// <summary>
 /// Traduce l'albero di filtri store-agnostic in un frammento di <b>SQL testuale parametrizzato</b>

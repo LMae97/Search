@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Filters;
+namespace Search.Core.Filters;
 
 /// <summary>
 /// Factory fluente per costruire alberi di filtri in modo leggibile nel codice/test:

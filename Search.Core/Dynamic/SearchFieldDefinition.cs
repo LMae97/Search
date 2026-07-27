@@ -1,6 +1,6 @@
-using Search.Application.Querying.Metadata;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Dynamic;
+namespace Search.Core.Dynamic;
 
 /// <summary>
 /// Definizione a DB di un campo di ricerca — unica per campi statici e dinamici, per entrambi gli store.

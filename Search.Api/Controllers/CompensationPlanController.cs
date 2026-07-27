@@ -3,6 +3,7 @@ using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
+using Search.Core;
 
 namespace Search.Api.Controllers;
 

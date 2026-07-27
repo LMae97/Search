@@ -1,16 +1,22 @@
 using System.Linq.Expressions;
-using Search.Application.Querying.Metadata;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Fluent;
+namespace Search.Linq;
 
-public static partial class SearchMap
+/// <summary>
+/// Entry point del builder type-safe (store LINQ/EF). Non è <c>partial</c> con <c>Search.Core.Fluent.SearchMap</c>
+/// (documentale/raw) perché una <c>partial class</c> non può avere parti in assembly diversi: nome distinto
+/// così, per chi referenzia sia Search.Mongo/Sql sia Search.Linq nello stesso file, "SearchMap" e "LinqSearchMap"
+/// non sono mai ambigui.
+/// </summary>
+public static class LinqSearchMap
 {
     /// <summary>
     /// Mappa <b>type-safe</b> per uno store LINQ/EF a partire dal tipo CLR <typeparamref name="T"/>. Qui il
     /// code-first brilla: il campo si dichiara con un'espressione (<c>p => p.Name</c>), <b>nome e tipo dedotti</b>
     /// dalla proprietà — niente stringhe, niente <see cref="FieldKind"/> a mano, refactor-safe.
     /// <code>
-    /// var map = SearchMap.For<Product>()
+    /// var map = LinqSearchMap.For<Product>()
     ///     .Field(p => p.Name).Searchable()
     ///     .Field(p => p.Price)                       // dedotto: Decimal
     ///     .Field(p => p.Tags.Select(t => t.Name), "tags")

@@ -1,6 +1,7 @@
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Metadata;
+using Search.Core.Dynamic;
+using Search.Core.Metadata;
 
 namespace Search.Tests;
 

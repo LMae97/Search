@@ -1,4 +1,4 @@
-namespace Search.Application.Querying;
+﻿namespace Search.Core;
 
 /// <summary>Esito paginato di una ricerca.</summary>
 public sealed class SearchResult<T>

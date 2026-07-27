@@ -1,8 +1,8 @@
-using Search.Application.Querying;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
+using Search.Core;
+using Search.Core.Filters;
+using Search.Core.Metadata;
 
-namespace Search.Infrastructure.Sql;
+namespace Search.Sql;
 
 /// <summary>
 /// Assembla una query SQL <b>completa e parametrizzata</b> per uno store "raw" (<see cref="Dynamic.StoreKind.PostgresRaw"/>):

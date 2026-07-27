@@ -1,6 +1,6 @@
-using Search.Application.Querying.Metadata;
+using Search.Core.Metadata;
 
-namespace Search.Infrastructure.Sql;
+namespace Search.Sql;
 
 /// <summary>Helper condivisi tra il translator e il query builder dello store SQL grezzo (PostgresRaw).</summary>
 internal static class SqlFieldExtensions

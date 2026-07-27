@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using Search.Application.Querying.Filters;
+using Search.Core.Filters;
 
-namespace Search.Application.Querying.Metadata;
+namespace Search.Core.Metadata;
 
 /// <summary>
 /// Descrittore di un campo ricercabile: nome pubblico, categoria di tipo, se è array,

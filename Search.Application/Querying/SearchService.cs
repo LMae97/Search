@@ -1,8 +1,10 @@
 using Search.Application.Config;
+using Search.Core;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Metadata;
-using Search.Application.Querying.Validation;
+using Search.Core.Dynamic;
+using Search.Core.Metadata;
+using Search.Core.Validation;
 
 namespace Search.Application.Querying;
 

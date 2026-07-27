@@ -1,4 +1,4 @@
-﻿namespace Search.Api.Contract;
+namespace Search.Api.Contract;
 
 public class ContractController
 {

@@ -1,7 +1,8 @@
 using System.Linq.Expressions;
-using Search.Application.Querying.Metadata;
+using Search.Core;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Linq;
+namespace Search.Linq;
 
 /// <summary>
 /// Esegue una <see cref="SearchRequest"/> su un <see cref="IQueryable{T}"/> (EF Core o

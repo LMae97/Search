@@ -1,7 +1,7 @@
-using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Metadata;
+using Search.Core.Dynamic;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Fluent;
+namespace Search.Core.Fluent;
 
 /// <summary>
 /// Costruttore <b>code-first</b> di una <see cref="IEntitySearchMap"/>, pensato per il caso "voglio solo filtrare
@@ -16,7 +16,7 @@ namespace Search.Application.Querying.Fluent;
 ///     .Build();
 /// </code>
 /// </summary>
-public static partial class SearchMap
+public static class SearchMap
 {
     /// <summary>Mappa per uno store documentale (Mongo): i path sono path del documento (dot-notation).</summary>
     public static SearchMapBuilder ForDocument(string entityName) => new(SearchEntity.Document(entityName));

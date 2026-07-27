@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
+using Search.Core.Filters;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Linq;
+namespace Search.Linq;
 
 /// <summary>
 /// Traduce un albero di filtri in <c>Expression&lt;Func&lt;TEntity,bool&gt;&gt;</c>.

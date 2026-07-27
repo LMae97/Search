@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Validation;
+namespace Search.Core.Validation;
 
 /// <summary>
 /// Richiesta di ricerca non valida. Raccoglie <b>tutti</b> gli errori in un colpo solo

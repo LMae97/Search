@@ -1,7 +1,7 @@
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
+using Search.Core.Filters;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Validation;
+namespace Search.Core.Validation;
 
 /// <summary>
 /// Valida una <see cref="SearchRequest"/> contro la mappa dell'entità, PRIMA della traduzione.

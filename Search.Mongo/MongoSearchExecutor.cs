@@ -1,9 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Search.Application.Querying;
-using Search.Application.Querying.Metadata;
+using Search.Core;
+using Search.Core.Metadata;
 
-namespace Search.Infrastructure.Mongo;
+namespace Search.Mongo;
 
 /// <summary>
 /// Esegue una <see cref="SearchRequest"/> su una collezione MongoDB — il gemello documentale di
@@ -198,7 +198,7 @@ public sealed class MongoSearchExecutor<TDocument>
 
         var document = new BsonDocument();
         foreach (var sort in sorts)
-            document[PathOf(sort.Field)] = sort.Direction == Search.Application.Querying.SortDirection.Ascending ? 1 : -1;
+            document[PathOf(sort.Field)] = sort.Direction == Search.Core.SortDirection.Ascending ? 1 : -1;
         return document;
     }
 

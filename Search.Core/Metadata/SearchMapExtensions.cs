@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Metadata;
+namespace Search.Core.Metadata;
 
 /// <summary>
 /// Helper condivisi sulla mappa dei campi, per non duplicare due regole trasversali nei tre store:

@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Filters;
+namespace Search.Core.Filters;
 
 /// <summary>
 /// Nodo dell'albero di filtri. È la rappresentazione interna, store-agnostic:

@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Metadata;
+namespace Search.Core.Metadata;
 
 /// <summary>
 /// Deriva la categoria di tipo (<see cref="FieldKind"/>) e il tipo CLR sottostante (nullable scartato)

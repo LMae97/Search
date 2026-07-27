@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Search.Application.Querying.Linq;
+namespace Search.Core.Metadata;
 
 /// <summary>
 /// Converte i valori del filtro (che dal JSON arrivano come string/number/bool) verso il tipo

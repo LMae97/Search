@@ -1,6 +1,6 @@
-using Search.Application.Querying.Filters;
+﻿using Search.Core.Filters;
 
-namespace Search.Application.Querying;
+namespace Search.Core;
 
 /** Esempio di richiesta:
  * {

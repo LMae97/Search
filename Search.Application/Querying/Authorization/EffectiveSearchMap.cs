@@ -1,4 +1,4 @@
-using Search.Application.Querying.Metadata;
+using Search.Core.Metadata;
 
 namespace Search.Application.Querying.Authorization;
 

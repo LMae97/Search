@@ -1,8 +1,8 @@
 using MongoDB.Bson;
-using Search.Application.Querying;
-using Search.Application.Querying.Fluent;
-using Search.Application.Querying.Metadata;
-using Search.Infrastructure.Mongo;
+using Search.Core;
+using Search.Core.Fluent;
+using Search.Core.Metadata;
+using Search.Mongo;
 
 namespace Search.Tests;
 

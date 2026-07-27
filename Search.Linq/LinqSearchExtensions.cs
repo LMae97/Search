@@ -1,9 +1,9 @@
-using Search.Application.Config;
-using Search.Application.Querying.Authorization;
-using Search.Application.Querying.Metadata;
-using Search.Application.Querying.Validation;
+using Search.Core;
+using Search.Core;
+using Search.Core.Metadata;
+using Search.Core.Validation;
 
-namespace Search.Application.Querying.Linq;
+namespace Search.Linq;
 
 /// <summary>
 /// Ingresso "senza cerimonie" per cercare su una sorgente LINQ (IQueryable EF o oggetti in memoria): mappa +

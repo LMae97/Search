@@ -1,8 +1,8 @@
 using MongoDB.Bson;
-using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
-using Search.Infrastructure.Mongo;
+using Search.Core.Dynamic;
+using Search.Core.Filters;
+using Search.Core.Metadata;
+using Search.Mongo;
 using static Search.Tests.TestSupport;
 
 namespace Search.Tests;

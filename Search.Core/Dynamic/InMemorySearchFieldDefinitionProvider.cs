@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Dynamic;
+namespace Search.Core.Dynamic;
 
 /// <summary>Implementazione in memoria di <see cref="ISearchFieldDefinitionProvider"/> (demo/test).</summary>
 public sealed class InMemorySearchFieldDefinitionProvider : ISearchFieldDefinitionProvider

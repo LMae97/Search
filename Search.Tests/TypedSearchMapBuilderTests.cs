@@ -1,8 +1,8 @@
-using Search.Application.Querying;
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Fluent;
-using Search.Application.Querying.Linq;
-using Search.Application.Querying.Metadata;
+using Search.Core;
+using Search.Core.Filters;
+using Search.Linq;
+using Search.Linq;
+using Search.Core.Metadata;
 
 namespace Search.Tests;
 
@@ -23,7 +23,7 @@ public sealed class TypedSearchMapBuilderTests
                 Tags = [] },
     ];
 
-    private static IEntitySearchMap ProductMap() => SearchMap.For<TestProduct>()
+    private static IEntitySearchMap ProductMap() => LinqSearchMap.For<TestProduct>()
         .Field(p => p.Id)
         .Field(p => p.Name).Searchable()
         .Field(p => p.Description).Searchable()

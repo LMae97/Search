@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Metadata;
+namespace Search.Core.Metadata;
 
 /// <summary>Categoria di tipo di un campo. Determina gli operatori ammessi di default.</summary>
 public enum FieldKind

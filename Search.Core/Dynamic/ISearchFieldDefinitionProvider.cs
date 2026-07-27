@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Dynamic;
+namespace Search.Core.Dynamic;
 
 /// <summary>
 /// Fornisce le definizioni dei campi per un'entità e un tenant: quelle globali (SpaceId null)

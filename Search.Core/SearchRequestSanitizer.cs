@@ -1,7 +1,7 @@
-using Search.Application.Querying.Filters;
-using Search.Application.Querying.Metadata;
+﻿using Search.Core.Filters;
+using Search.Core.Metadata;
 
-namespace Search.Application.Querying.Authorization;
+namespace Search.Core;
 
 /// <summary>
 /// Adatta una richiesta alla mappa effettiva dell'utente <b>rimuovendo</b> (non rifiutando) i

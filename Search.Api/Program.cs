@@ -2,10 +2,12 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Search.Application.Querying;
 using Search.Application.Querying.Dynamic;
-using Search.Application.Querying.Validation;
+using Search.Core.Dynamic;
+using Search.Core.Validation;
 using Search.Api.Serialization;
 using Search.Infrastructure.Sql;
 using Search.Infrastructure.Mongo;
+using Search.Sql;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);

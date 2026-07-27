@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Search.Application.Querying.Linq;
+namespace Search.Linq;
 
 /// <summary>
 /// Sostituisce il parametro di una lambda con un'altra espressione. Serve a "ribasare" i

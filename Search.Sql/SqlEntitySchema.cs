@@ -1,4 +1,4 @@
-namespace Search.Infrastructure.Sql;
+namespace Search.Sql;
 
 /// <summary>
 /// Configurazione SQL di un'entità per lo store "raw" (<see cref="Dynamic.StoreKind.PostgresRaw"/>): come si
