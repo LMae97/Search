@@ -38,7 +38,7 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
     /** FLUSSO 
      *   SearchHandlerBase.Search
      *     ├─ mappa effettiva → sanitize → validate
-     *     ├─ FreeTextExpansion.Apply(config.FreeText, map, request)
+     *     ├─ SearchTextExpansion.Apply(config.FreeText, map, request)
      *     │     ├─ OrContains → Search diventa Or(Contains…) dentro Filter, Search=null
      *     │     └─ Atlas      → Search resta intatto
      *     └─ Execute(config, map, prepared, spaceId)
