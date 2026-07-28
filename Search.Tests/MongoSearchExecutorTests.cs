@@ -113,4 +113,39 @@ public sealed class MongoSearchExecutorTests
         Assert.Equal("mario rossi", should[0]["autocomplete"]["query"].AsString); // spazi collassati
         Assert.Equal("sequential", should[0]["autocomplete"]["tokenOrder"].AsString);
     }
+
+    // ---------------------------------------------------------------- unwind (es. prodotti di un contratto)
+
+    private static MongoSearchExecutor<BsonDocument> UnwindingExecutor() => new(
+        Map(SearchEntity.Document(E), Caller(),
+            Def(E, "id", FieldKind.ObjectId, "_id"),
+            Def(E, "name", FieldKind.String, "name")),
+        unwindPath: "contractData._products");
+
+    [Fact]
+    public void No_unwind_path_means_no_unwind_stage()
+    {
+        var plan = Executor().BuildPlan(new SearchRequest { Projection = ["name"] });
+
+        Assert.Null(plan.UnwindStage);
+    }
+
+    [Fact]
+    public void Unwind_path_builds_the_matching_stage()
+    {
+        var plan = UnwindingExecutor().BuildPlan(new SearchRequest { Projection = ["name"] });
+
+        Assert.NotNull(plan.UnwindStage);
+        Assert.Equal("$contractData._products", plan.UnwindStage!["$unwind"].AsString);
+    }
+
+    [Fact]
+    public void Unwind_alone_without_free_text_still_requires_the_aggregate_path()
+    {
+        // Nessun $search, ma l'unwind da solo basta a impedire la find() classica (una find non può esprimere $unwind).
+        var plan = UnwindingExecutor().BuildPlan(new SearchRequest { Projection = ["name"] });
+
+        Assert.Null(plan.SearchStage);
+        Assert.NotNull(plan.UnwindStage);
+    }
 }

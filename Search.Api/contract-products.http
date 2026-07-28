@@ -1,0 +1,33 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### acq format
+POST {{baseUrl}}/contract-products/search
+Content-Type: {{contentType}}
+
+{
+    "search": "",
+    "status": [],
+    "statusType": [],
+    "organizations": [],
+    "orgMembers": [],
+    "products": [],
+    "productOptions": [],
+    "brands": [],
+    "workProfiles": [],
+    "assignees": [],
+    "paid": [],
+    "automationStatus": [],
+    "signatureDate": {},
+    "createdAtDate": {},
+    "options": {
+        "columns": [
+          "code",
+          "productCode",
+          "createdAt",
+          "brand"
+        ],
+        "page": 1,
+        "pageSize": 100
+    }
+}

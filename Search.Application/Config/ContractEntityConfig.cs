@@ -23,6 +23,8 @@ public class ContractEntityConfig : ISearchableEntityConfig
         IdField
     ];
 
+    public FreeTextSearch FreeText => FreeTextSearch.Atlas("Contract");
+
     public FilterNode? AuthFilters(IVisibilityFilters? filters)
     {
         if (filters == null) return null;

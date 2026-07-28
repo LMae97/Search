@@ -18,4 +18,11 @@ public interface ISearchableEntityConfig
     /// Le entità che vogliono Atlas fanno override con <see cref="FreeTextSearch.Atlas"/>.
     /// </summary>
     FreeTextSearch FreeText => FreeTextSearch.OrContains;
+
+    /// <summary>
+    /// Path Mongo (dot-notation, senza <c>"$"</c>) da esplodere con uno stage <c>$unwind</c> prima del filtro —
+    /// per le entità che espongono una collezione annidata come righe indipendenti (es. i prodotti di un
+    /// contratto: <c>"contractData._products"</c>). Default <c>null</c> = nessun unwind, comportamento invariato.
+    /// </summary>
+    string? MongoUnwindPath => null;
 }

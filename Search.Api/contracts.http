@@ -28,7 +28,7 @@ POST {{baseUrl}}/contracts/search
 Content-Type: {{contentType}}
 
 {
-    "search": "",
+    "search": "maestrini",
     "status": [],
     "statusType": [],
     "organizations": [],
