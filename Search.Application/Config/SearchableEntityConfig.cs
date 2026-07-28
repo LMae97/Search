@@ -1,5 +1,6 @@
 using Search.Core;
 using Search.Core.Dynamic;
+using Search.Core.Filters;
 
 namespace Search.Application.Config;
 
@@ -10,6 +11,7 @@ public interface ISearchableEntityConfig
     IReadOnlyList<string> DefaultProjection { get; }
     IReadOnlyList<SortField> DefaultSort { get; }
     string IdField { get; }
+    public FilterNode? AuthFilters(IVisibilityFilters? filters);
 
     /// <summary>
     /// Come tradurre il free-text (<c>SearchRequest.Search</c>). Default: OR di contains (universale).

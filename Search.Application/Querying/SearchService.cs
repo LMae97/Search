@@ -6,6 +6,7 @@ using Search.Core.Dynamic;
 using Search.Core.Metadata;
 using Search.Core.Validation;
 using Search.Application.Dtos;
+using Search.Core.Filters;
 
 namespace Search.Application.Querying;
 
@@ -59,10 +60,25 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
         var projection = AdaptProjection(map, config, sanitized);
         var sort = AdaptSort(config, sanitized);
 
+        //TODO: GESTIRE LA PARTE DI AUTORIZZAZIONE QUA SOTTO: VERRA' FATTA PIU' AVANTI, PER ORA NON E' IMPORTANTE
+        /*
+        var authFilters = config.AuthFilters(new ContractVisibilityFilters {
+            AssignedToId = Guid.Parse("021cd22b-2d33-4c5c-ae61-11545048581a"),
+            OrgMemberIds = [Guid.Parse("62a91152-9293-4ee7-98bc-c556ad1efad9")]
+
+        });
+
+        var filters = new List<FilterNode?>() { authFilters, sanitized.Filter }.Where(x => x != null).ToList();
+        var filterToUse = filters == null || filters.Count == 0 ? null :
+            filters.Count == 1 ? filters[0] :
+            Filter.And([.. filters!]);
+        */
+        var filterToUse = sanitized.Filter;
+
         var resolved = new SearchRequest
         {
             Search = sanitized.Search,
-            Filter = sanitized.Filter,
+            Filter = filterToUse,
             Projection = projection,
             Sort = sort,
             Page = sanitized.Page

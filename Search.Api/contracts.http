@@ -49,6 +49,6 @@ Content-Type: {{contentType}}
           "brand"
         ],
         "page": 1,
-        "pageSize": 50
+        "pageSize": 100
     }
 }

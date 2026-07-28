@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Search.Core;
 using Search.Core.Filters;
 
@@ -80,10 +81,30 @@ public static class BaseSearchRequestDtoAdapter
         return Filter.Between(f.Field, values[0], values[1]);
     }
 
-    private static object?[] SplitValues(string? raw) =>
-        (raw ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    // Valori multipli: accetta sia CSV ("a,b,c") sia un array JSON serializzato in stringa
+    // ("[\"a\",\"b\"]") — quest'ultimo perché è così che il FE reale li manda, non come CSV.
+    private static object?[] SplitValues(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return [];
+
+        var trimmed = raw.Trim();
+        if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+        {
+            try
+            {
+                var items = JsonSerializer.Deserialize<List<string?>>(trimmed);
+                return items?.Cast<object?>().ToArray() ?? [];
+            }
+            catch (JsonException)
+            {
+                // Non era JSON valido nonostante le parentesi: ricadi sullo split a virgola sotto.
+            }
+        }
+
+        return trimmed.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Cast<object?>()
             .ToArray();
+    }
 
     private static FilterOperator ParseOperation(string operation) => operation.Trim().ToLowerInvariant() switch
     {

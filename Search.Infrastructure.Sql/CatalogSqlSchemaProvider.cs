@@ -20,13 +20,34 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 
     private static readonly SqlEntitySchema Customer = new(
         from: "FROM \"Customers\" AS \"customer\"",
+        basePredicate: "customer.\"SpaceId\" = @space",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
             ["createdByName"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteCreatore\" ON \"utenteCreatore\".\"Id\" = \"customer\".\"CreatedById\""),
             ["updatedByName"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteModificatore\" ON \"utenteModificatore\".\"Id\" = \"customer\".\"UpdatedById\""),
+            ["contractOrgMemberIds"] = new SqlM2MJoin(CustomerContractOrgMemberJoin),
+            ["contractAssignedToIds"] = new SqlM2MJoin(CustomerContractAssignedToJoin),
+            ["contractOrgMemberOrganizationIds"] = new SqlM2MJoin(CustomerContractOrgMemberJoin),
+            ["contractAssignedToOrganizationIds"] = new SqlM2MJoin(CustomerContractAssignedToJoin),
             ["tagIds"] = new SqlM2MJoin(CustomerTagJoin),
             ["tagNames"] = new SqlM2MJoin(CustomerTagJoin)
         });
+
+    private const string CustomerContractOrgMemberJoin = $"""
+            FROM "Contracts" AS "ctr"
+            INNER JOIN "OrgMembers" AS "om"
+                ON "ctr"."OrgMemberId" = "om"."Id"
+                AND "om"."SpaceId" = @space
+            WHERE customer."Id" = "ctr"."CustomerId"
+        """;
+
+    private const string CustomerContractAssignedToJoin = $"""
+            FROM "Contracts" AS "ctr"
+            LEFT JOIN "Users" AS "u"
+                ON "ctr"."AssignedToId" = "u"."Id"
+                AND "u"."SpaceId" = @space
+            WHERE customer."Id" = "ctr"."CustomerId"
+        """;
 
     private const string CustomerTagJoin = $"""
             FROM "CustomerTag" AS "ct"
@@ -38,6 +59,7 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 
     private static readonly SqlEntitySchema Workprofile = new(
         from: "FROM \"WorkProfiles\" AS \"workprofile\"",
+        basePredicate: "workprofile.\"SpaceId\" = @space",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
             ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"workprofile\".\"BrandId\""),

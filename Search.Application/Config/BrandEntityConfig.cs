@@ -1,5 +1,6 @@
 using Search.Core;
 using Search.Core.Dynamic;
+using Search.Core.Filters;
 
 namespace Search.Application.Config;
 
@@ -18,6 +19,8 @@ public class BrandEntityConfig : ISearchableEntityConfig
     ];
 
     public string IdField => "id";
+
+    public FilterNode? AuthFilters(IVisibilityFilters? filters) => null;
 
     public IReadOnlyList<string> HiddenProjection => [
         IdField

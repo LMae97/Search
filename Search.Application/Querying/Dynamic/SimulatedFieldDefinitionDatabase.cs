@@ -63,6 +63,10 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("customer", "updatedAt", FieldKind.DateTime, false, false, "customer.\"UpdatedAt\""));
         rows.Add(new SearchFieldDefinition("customer", "createdAt", FieldKind.DateTime, false, false, "customer.\"CreatedAt\""));
         rows.Add(new SearchFieldDefinition("customer", "spaceId", FieldKind.Guid, false, false, "customer.\"SpaceId\""));
+        rows.Add(new SearchFieldDefinition("customer", "contractOrgMemberIds", FieldKind.Guid, false, true, "om.\"Id\""));
+        rows.Add(new SearchFieldDefinition("customer", "contractAssignedToIds", FieldKind.Guid, false, true, "u.\"Id\""));
+        rows.Add(new SearchFieldDefinition("customer", "contractOrgMemberOrganizationIds", FieldKind.Guid, false, true, "om.\"OrganizationId\""));
+        rows.Add(new SearchFieldDefinition("customer", "contractAssignedToOrganizationIds", FieldKind.Guid, false, true, "u.\"OrganizationId\""));
 
         rows.Add(new SearchFieldDefinition("user", "id", FieldKind.Guid, false, false, "utente.\"Id\"", Label: "Id"));
         rows.Add(new SearchFieldDefinition("user", "username", FieldKind.String, false, false, "utente.\"Username\"", Label: "Nome utente", Section: "Contatti"));
