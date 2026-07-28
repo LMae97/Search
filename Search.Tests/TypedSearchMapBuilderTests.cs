@@ -1,7 +1,6 @@
 using Search.Core;
 using Search.Core.Filters;
 using Search.Linq;
-using Search.Linq;
 using Search.Core.Metadata;
 
 namespace Search.Tests;

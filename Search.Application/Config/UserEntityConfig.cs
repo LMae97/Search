@@ -15,4 +15,10 @@ public class UserEntityConfig : ISearchableEntityConfig
         new SortField("username", SortDirection.Ascending),
         new SortField("id", SortDirection.Ascending)
     ];
+
+    public string IdField => "id";
+
+    public IReadOnlyList<string> HiddenProjection => [
+        IdField
+    ];
 }

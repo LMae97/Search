@@ -5,6 +5,7 @@ using Search.Application.Querying.Dynamic;
 using Search.Core.Dynamic;
 using Search.Core.Metadata;
 using Search.Core.Validation;
+using Search.Application.Dtos;
 
 namespace Search.Application.Querying;
 
@@ -14,7 +15,7 @@ namespace Search.Application.Querying;
 /// </summary>
 public interface ISearchService
 {
-    SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller);
+    SearchResponseDto Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller);
 }
 
 /// <summary>
@@ -28,7 +29,7 @@ public interface ISearchService
 public interface ISearchHandler
 {
     StoreKind Store { get; }
-    SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller);
+    SearchResponseDto Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller);
 }
 
 /// <summary>
@@ -37,9 +38,10 @@ public interface ISearchHandler
 /// </summary>
 public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearchHandler
 {
-    /** FLUSSO 
+    /** FLUSSO
      *   SearchHandlerBase.Search
      *     ├─ mappa effettiva → sanitize → validate
+     *     ├─ proiezione vuota → DefaultProjection() (unica risoluzione, riusata da dati E header)
      *     ├─ SearchTextExpansion.Apply(config.FreeText, map, request)
      *     │     ├─ OrContains → Search diventa Or(Contains…) dentro Filter, Search=null
      *     │     └─ Atlas      → Search resta intatto
@@ -48,16 +50,70 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
      */
     public abstract StoreKind Store { get; }
 
-    public SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
+    public SearchResponseDto Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
     {
         var map = maps.GetEffectiveMap(config.SearchEntity, caller);
         var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
 
-        // Free-text → filtro (OrContains) oppure lasciato allo store (Atlas). Post-validazione, come il tenant scope.
-        var prepared = SearchTextExpansion.Apply(config.FreeText, map, sanitized);
+        var projection = AdaptProjection(map, config, sanitized);
+        var sort = AdaptSort(config, sanitized);
 
-        return Execute(config, map, prepared, caller.SpaceId);
+        var resolved = new SearchRequest
+        {
+            Search = sanitized.Search,
+            Filter = sanitized.Filter,
+            Projection = projection,
+            Sort = sort,
+            Page = sanitized.Page
+        };
+
+        // Free-text → filtro (OrContains) oppure lasciato allo store (Atlas). Post-validazione, come il tenant scope.
+        var prepared = SearchTextExpansion.Apply(config.FreeText, map, resolved);
+
+        var result = Execute(config, map, prepared, caller.SpaceId);
+
+        // Stesso ordine della proiezione risolta (non l'ordine interno di map.Fields, arbitrario/non garantito).
+        var prjFields = projection.Select(name => map.Fields[name]);
+
+        return SearchResponseAdapter.ToSearchResponseDto(prjFields, result);
+    }
+
+    private static IReadOnlyList<string> AdaptProjection(
+        IEntitySearchMap map,
+        ISearchableEntityConfig config,
+        SearchRequest req
+        )
+    {
+        var basePrj = config.HiddenProjection.ToHashSet();
+
+        var reqPrj = req.Projection;
+        var mapPrj = map.DefaultProjection();
+        var configPrj = config.DefaultProjection;
+
+        var prj = reqPrj.Count > 0 ? reqPrj
+            : mapPrj.Count > 0 ? mapPrj
+            : configPrj;
+
+        basePrj.UnionWith(prj.ToHashSet());
+
+        return [.. basePrj];
+    }
+
+    private static IReadOnlyList<SortField> AdaptSort(
+        ISearchableEntityConfig config, 
+        SearchRequest req)
+    {
+        var defaultSorting = config.IdField;
+
+        var reqSort = req.Sort.ToList();
+        var configSort = config.DefaultSort.ToList();
+
+        var sort = reqSort.Count > 0 ? reqSort : configSort;
+        if (sort.Any(x => x.Field == defaultSorting)) return sort;
+
+        sort.Add(new SortField(defaultSorting, SortDirection.Ascending));
+        return sort;
     }
 
     /// <summary>Esegue la richiesta già sanificata/validata/espansa contro lo store concreto.</summary>
@@ -72,7 +128,7 @@ public sealed class SearchService(IEnumerable<ISearchHandler> handlers) : ISearc
     private readonly IReadOnlyDictionary<StoreKind, ISearchHandler> _handlers =
         handlers.ToDictionary(handler => handler.Store);
 
-    public SearchResult<IReadOnlyDictionary<string, object?>> Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
+    public SearchResponseDto Search(ISearchableEntityConfig config, SearchRequest request, SearchCaller caller)
     {
         var store = config.SearchEntity.Store;
         return _handlers.TryGetValue(store, out var handler)

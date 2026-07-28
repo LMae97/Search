@@ -1,21 +1,18 @@
-using Search.Core;
+﻿using Search.Core;
 using Search.Core.Dynamic;
 
 namespace Search.Application.Config;
 
-public class ProductEntityConfig : ISearchableEntityConfig
+public class ContractEntityConfig : ISearchableEntityConfig
 {
-    public SearchEntity SearchEntity => SearchEntity.RelationalRaw(SearchableEntityNameDict.Product);
+    public SearchEntity SearchEntity => SearchEntity.Document(SearchableEntityNameDict.Contract);
 
     public IReadOnlyList<string> DefaultProjection => [
-        "id",
-        "name",
-        "description",
-        "status"
+        "id"
     ];
 
     public IReadOnlyList<SortField> DefaultSort => [
-        new SortField("name", SortDirection.Ascending) ,
+        new SortField("createdAt", SortDirection.Descending),
         new SortField("id", SortDirection.Ascending)
     ];
 

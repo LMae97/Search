@@ -2,7 +2,6 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Search.Core.Filters;
 using Search.Core.Metadata;
-using Search.Core.Metadata;
 
 namespace Search.Mongo;
 

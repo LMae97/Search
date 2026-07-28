@@ -27,6 +27,6 @@ public sealed class CompensationPlanController : ControllerBase
 
         var result = _search.Search(new CompensationPlanEntityConfig(), request, caller);
 
-        return Ok(new { result.Items, result.TotalCount, result.PageNumber, result.PageSize });
+        return Ok(new { result });
     }
 }

@@ -18,4 +18,10 @@ public class CustomerEntityConfig : ISearchableEntityConfig
         new SortField("name", SortDirection.Ascending) ,
         new SortField("id", SortDirection.Ascending)
     ];
+
+    public string IdField => "id";
+
+    public IReadOnlyList<string> HiddenProjection => [
+        IdField
+    ];
 }

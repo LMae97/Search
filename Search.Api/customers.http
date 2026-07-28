@@ -37,8 +37,8 @@ Content-Type: {{contentType}}
     "id", "businessType", "legalDoor", "phone", "businessCode", "email", "businessName", "legalStairs",
     "vatNumber", "sector", "legalCountry", "legalFloor", "legalStreet", "legalStreetNumber", "birthProvince", "lastName", 
     "website", "legalState", "legalCity", "birthPlace", "birthCountry", "legalZip", "sdiCode", "businessFiscalCode", 
-    "tagIds", "businessActivity", "fax", "pec", "firstName", "sex", "tagNames", "type", 
-    "fiscalCode", "externalId", "landline", "mobile", "createdById", "createdByName", "updatedById", "updatedByName"
+    "businessActivity", "fax", "pec", "firstName", "sex", "type",  "fiscalCode", "externalId", "landline", 
+    "mobile", "createdById", "createdByName", "updatedById", "updatedByName", "tagIds", "tagNames" 
   ],
   "sort": [
     { "field": "lastName", "direction": "Ascending" },

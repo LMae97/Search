@@ -1,36 +1,35 @@
 using Microsoft.AspNetCore.Mvc;
+using Search.Api.Contract;
 using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
-using Search.Core;
 
 namespace Search.Api.Controllers;
 
 [ApiController]
-[Route("customers")]
-public sealed class CustomerController : ControllerBase
+[Route("contracts")]
+public sealed class ContractController : ControllerBase
 {
-    // Utente di audit fittizio finché non c'è l'autenticazione reale.
-    private const string AuditUser = "api@we-byte.it";
-
     private readonly ISearchService _search;
 
-    public CustomerController(ISearchService search)
+    public ContractController(ISearchService search)
     {
         _search = search;
     }
 
     [HttpPost("search")]
-    public IActionResult Search(SearchRequest request)
+    public IActionResult Search(SearchContractRequestDto request)
     {
         var caller = new SearchCaller(
             SimulatedFieldDefinitionDatabase.DemoSpace,
             new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
 
-        var entityConfig = new CustomerEntityConfig();
+        // TODO: sostituire con l'id dell'utente autenticato reale (serve per Assignees.OwnOption).
+        var currentUserId = Guid.Empty;
 
-        var result = _search.Search(entityConfig, request, caller);
+        var searchRequest = ContractRequestAdapter.Adapt(request, currentUserId);
+        var result = _search.Search(new ContractEntityConfig(), searchRequest, caller);
 
         return Ok(new { result });
     }

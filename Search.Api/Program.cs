@@ -49,7 +49,8 @@ if (!string.IsNullOrWhiteSpace(mongoConnectionString))
         sp.GetRequiredService<IMongoDatabase>(),
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["compensationPlan"] = "CompensationPlan"
+            ["compensationPlan"] = "CompensationPlan",
+            ["contract"] = "Contract"
         }));
     builder.Services.AddSingleton<ISearchHandler, MongoSearchHandler>();
 }

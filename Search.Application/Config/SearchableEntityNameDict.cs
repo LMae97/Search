@@ -8,4 +8,5 @@ public static class SearchableEntityNameDict
     public const string User = "user";
     public const string WorkProfile = "workProfile";
     public const string CompensationPlan = "compensationPlan";
+    public const string Contract = "contract";
 }

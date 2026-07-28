@@ -1,5 +1,4 @@
 using Search.Core;
-using Search.Core;
 using Search.Core.Metadata;
 using Search.Core.Validation;
 

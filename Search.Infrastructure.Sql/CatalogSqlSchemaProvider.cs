@@ -14,7 +14,7 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
     {
         "customer" => Customer,
         "workprofile" => Workprofile,
-        "utente" => User,
+        "user" => User,
         _ => throw new InvalidOperationException($"Nessuna configurazione SQL per l'entità '{entityName}'.")
     };
 
@@ -30,7 +30,7 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
 
     private const string CustomerTagJoin = $"""
             FROM "CustomerTag" AS "ct"
-            INNER JOIN "Tags" AS "t"
+            INNER JOIN "Tags" AS "tag"
                 ON "ct"."TagId" = "tag"."Id"
                 AND "tag"."SpaceId" = @space
             WHERE customer."Id" = "ct"."CustomerId"
@@ -59,8 +59,25 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
             ["workProfile"] = new SqlM2MJoin(UserWorkProfileJoin),
-            ["accountEmail"] = new SqlSimpleJoin("LEFT JOIN \"Accounts\" AS \"account\" ON \"account\".\"Id\" = \"utente\".\"AccountId\"")
+            ["workProfiles"] = new SqlM2MJoin(UserWorkProfileJoin),
+            ["brand"] = new SqlM2MJoin(UserWorkProfileJoin),
+            ["workProfileId"] = new SqlM2MJoin(UserWorkProfileJoin),
+            ["brandId"] = new SqlM2MJoin(UserWorkProfileJoin),
+            ["accountEmail"] = new SqlSimpleJoin(AccountJoin),
+            ["sex"] = new SqlSimpleJoin(AccountJoin),
+            ["birthDate"] = new SqlSimpleJoin(AccountJoin),
+            ["organization"] = new SqlSimpleJoin("LEFT JOIN \"Organizations\" AS \"organization\" ON \"organization\".\"Id\" = \"utente\".\"OrganizationId\""),
+            ["typology"] = new SqlSimpleJoin("LEFT JOIN \"Typologies\" AS \"typology\" ON \"typology\".\"Id\" = \"utente\".\"TypologyId\""),
+            ["roleIds"] = new SqlM2MJoin(UserRoleJoin),
+            ["roles"] = new SqlM2MJoin(UserRoleJoin),
+            ["tagIds"] = new SqlM2MJoin(UserTagJoin),
+            ["tags"] = new SqlM2MJoin(UserTagJoin),
+            ["createdBy"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteCreatore\" ON \"utenteCreatore\".\"Id\" = \"utente\".\"CreatedById\""),
+            ["updatedBy"] = new SqlSimpleJoin("LEFT JOIN \"Users\" AS \"utenteModificatore\" ON \"utenteModificatore\".\"Id\" = \"utente\".\"UpdatedById\"")
         });
+
+    private const string AccountJoin =
+        "LEFT JOIN \"Accounts\" AS \"account\" ON \"account\".\"Id\" = \"utente\".\"AccountId\"";
 
     private const string UserWorkProfileJoin = $"""
             FROM "UserWorkProfileReadOnly" AS "uwp"
@@ -71,5 +88,20 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
                 ON "workprofile"."BrandId" = "brand"."Id"
                 AND "brand"."SpaceId" = @space
             WHERE utente."Id" = "uwp"."UserId"
+        """;
+
+    private const string UserRoleJoin = $"""
+            FROM "UserRole" AS "ur"
+            INNER JOIN "Roles" AS "role"
+                ON "ur"."RoleId" = "role"."Id"
+            WHERE utente."Id" = "ur"."UserId"
+        """;
+
+    private const string UserTagJoin = $"""
+            FROM "UserTag" AS "ut"
+            INNER JOIN "Tags" AS "tag"
+                ON "ut"."TagId" = "tag"."Id"
+                AND "tag"."SpaceId" = @space
+            WHERE utente."Id" = "ut"."UserId"
         """;
 }

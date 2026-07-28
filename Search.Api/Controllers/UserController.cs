@@ -32,6 +32,6 @@ public sealed class UserController : ControllerBase
 
         var result = _search.Search(entityConfig, request, caller);
 
-        return Ok(new { result.Items, result.TotalCount, result.PageNumber, result.PageSize });
+        return Ok(new { result });
     }
 }

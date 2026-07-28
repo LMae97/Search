@@ -70,7 +70,7 @@ public sealed class SqlSearchQueryBuilder
     // presente nel testo, così non passiamo mai un parametro inutilizzato quando quel join non c'è.
     private static void BindSpace(string sql, Dictionary<string, object?> parameters, Guid spaceId)
     {
-        if (sql.Contains("@space"))
+        if (sql.Contains("@space")) 
             parameters["@space"] = spaceId;
     }
 

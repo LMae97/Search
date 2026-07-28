@@ -6,8 +6,10 @@ namespace Search.Application.Config;
 public interface ISearchableEntityConfig
 {
     SearchEntity SearchEntity { get; }
+    IReadOnlyList<string> HiddenProjection { get; }
     IReadOnlyList<string> DefaultProjection { get; }
     IReadOnlyList<SortField> DefaultSort { get; }
+    string IdField { get; }
 
     /// <summary>
     /// Come tradurre il free-text (<c>SearchRequest.Search</c>). Default: OR di contains (universale).

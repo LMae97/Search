@@ -1,0 +1,54 @@
+@baseUrl = http://localhost:5080
+@contentType = application/json
+
+### old format
+POST {{baseUrl}}/contracts/search
+Content-Type: {{contentType}}
+
+{
+  "projection": [
+    "id", "name", "description",
+    "createdById", "createdBy", "createdAt",
+    "updatedById", "updatedBy", "updatedAt",
+    "customerDetailsSdiCode", "customerDetailsEmail",
+    "customerDetailsFirstName", "customerDetailsLastName",
+    "customerDetailsFiscalCode", "customerDetailsVatId", 
+    "customerDetailsCompanyName", "brand", "customerDetailsPhone",
+    "customerDetailsLandlinePhone", "customerDetailsCompanyFiscalCode"
+  ],
+  "sort": [
+    { "field": "customerDetailsCompanyName", "direction": "Ascending" }
+  ],
+  "page": { "number": 8, "size": 20 }
+}
+
+
+### acq format
+POST {{baseUrl}}/contracts/search
+Content-Type: {{contentType}}
+
+{
+    "search": "",
+    "status": [],
+    "statusType": [],
+    "organizations": [],
+    "orgMembers": [],
+    "products": [],
+    "productOptions": [],
+    "brands": [],
+    "workProfiles": [],
+    "assignees": [],
+    "paid": [],
+    "automationStatus": [],
+    "signatureDate": {},
+    "createdAtDate": {},
+    "options": {
+        "columns": [
+          "code",
+          "createdAt",
+          "brand"
+        ],
+        "page": 1,
+        "pageSize": 50
+    }
+}
