@@ -24,7 +24,7 @@ public sealed class SearchRequestSanitizer
 
         return new SearchRequest
         {
-            Search = request.Search, // free-text: nessun campo da potare, si porta avanti così com'è
+            FullTextSearch = request.FullTextSearch, // free-text: nessun campo da potare, si porta avanti così com'è
             Filter = Prune(request.Filter),
             Projection = projection,
             Sort = request.Sort.Where(sort => IsKnown(sort.Field)).ToList(),

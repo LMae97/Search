@@ -1,3 +1,4 @@
+using Search.Api.Dto;
 using Search.Core;
 using Search.Core.Filters;
 
@@ -5,27 +6,29 @@ namespace Search.Api.Controllers.WorkProfile;
 
 public class WorkProfileSearchRequestAdapter
 {
-    public static SearchRequest Adapt(WorkProfileSearchRequest req)
+    public static SearchRequest Adapt(WorkProfileSearchRequestDto req)
     {
-        var combinedFilter = GetBaseFilters(req);
+        var baseFilters = WorkProfileBaseFilters.GetBaseFilters(req);
+        var advancedFilter = BaseSearchRequestDtoAdapter.BuildFilter(req.Options?.Filters);
 
-        if (combinedFilter != null && req.Filter != null)
-        {
-            combinedFilter = Filter.And(combinedFilter, req.Filter);
-        }
-        
-        combinedFilter ??= req.Filter;
+        var filters = BaseSearchRequestDtoAdapter.Combine(LogicalOperator.And, [advancedFilter, baseFilters]);
+        var sort = BaseSearchRequestDtoAdapter.BuildSort(req.Options?.SortBy);
+        var page = BaseSearchRequestDtoAdapter.BuildPage(req.Options);
 
         return new SearchRequest
         {
-            Filter = combinedFilter,
-            Projection = req.Projection,
-            Sort = req.Sort,
-            Page = req.Page
+            FullTextSearch = null,  //viene usata solo per mongo
+            Filter = filters,
+            Projection = req.Options?.Columns ?? [],
+            Sort = sort,
+            Page = page
         };
     }
+}
 
-    private static FilterNode? GetBaseFilters(WorkProfileSearchRequest request)
+public static class WorkProfileBaseFilters
+{
+    public static FilterNode? GetBaseFilters(WorkProfileSearchRequestDto request)
     {
         var srcParam = request?.Search;
 

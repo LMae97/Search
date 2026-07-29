@@ -14,15 +14,6 @@ namespace Search.Api.Dto;
 /// </summary>
 public static class BaseSearchRequestDtoAdapter
 {
-    public static SearchRequest ToSearchRequest(BaseSearchRequestDto dto) => new()
-    {
-        Search = dto.Search,
-        Filter = BuildFilter(dto.Options?.Filters),
-        Projection = dto.Options?.Columns ?? [],
-        Sort = BuildSort(dto.Options?.SortBy),
-        Page = BuildPage(dto.Options)
-    };
-
     /// <summary>AND delle liste esterne, OR di ciascuna lista interna. Esposto per riuso dai filtri "extra".</summary>
     public static FilterNode? BuildFilter(List<List<FilterDto>>? filters)
     {
@@ -131,7 +122,7 @@ public static class BaseSearchRequestDtoAdapter
         _ => throw new ArgumentException($"Operazione filtro sconosciuta: '{operation}'.")
     };
 
-    private static List<SortField> BuildSort(List<SortingDto>? sortBy) =>
+    public static List<SortField> BuildSort(List<SortingDto>? sortBy) =>
         sortBy?.Select(s => new SortField(s.Field, ParseDirection(s.Direction))).ToList() ?? [];
 
     private static SortDirection ParseDirection(string direction) => direction.Trim().ToLowerInvariant() switch
@@ -140,6 +131,6 @@ public static class BaseSearchRequestDtoAdapter
         _ => SortDirection.Ascending
     };
 
-    private static PageRequest BuildPage(OptionsDto? options) =>
+    public static PageRequest BuildPage(OptionsDto? options) =>
         new(options?.Page ?? PageRequest.Default.Number, options?.PageSize ?? PageRequest.Default.Size);
 }

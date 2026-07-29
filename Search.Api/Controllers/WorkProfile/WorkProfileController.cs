@@ -21,7 +21,7 @@ public sealed class WorkProfileController : ControllerBase
     }
 
     [HttpPost("search")]
-    public IActionResult Search(WorkProfileSearchRequest request)
+    public IActionResult Search(WorkProfileSearchRequestDto request)
     {
         var caller = new SearchCaller(
             SimulatedFieldDefinitionDatabase.DemoSpace,

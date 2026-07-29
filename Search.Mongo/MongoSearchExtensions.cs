@@ -20,15 +20,12 @@ public static class MongoSearchExtensions
         this IMongoCollection<TDocument> collection,
         SearchRequest request,
         IEntitySearchMap map,
-        FreeTextSearch? freeText = null)
+        string? atlasIndex)
     {
-        var strategy = freeText ?? FreeTextSearch.OrContains;
-
         var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
-        var prepared = SearchTextExpansion.Apply(strategy, map, sanitized);
 
-        var executor = new MongoSearchExecutor<TDocument>(map, strategy.AtlasIndex ?? "default");
-        return executor.Execute(collection, prepared);
+        var executor = new MongoSearchExecutor<TDocument>(map, atlasIndex ?? "default");
+        return executor.Execute(collection, sanitized);
     }
 }

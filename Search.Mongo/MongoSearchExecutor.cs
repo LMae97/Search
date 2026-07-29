@@ -18,14 +18,14 @@ public sealed class MongoSearchExecutor<TDocument>
     /// Nome dell'indice Atlas Search usato dallo stage <c>$search</c>. "default" è la convenzione di Atlas;
     /// in futuro andrà reso configurabile per-entità (oggi è uno solo per lo slice di valutazione).
     /// </summary>
-    private const string DefaultAtlasIndex = "default";
+    //private const string DefaultAtlasIndex = "default";
 
     private readonly IEntitySearchMap _map;
     private readonly MongoFilterTranslator<TDocument> _filterTranslator;
-    private readonly string _atlasIndex;
+    private readonly string? _atlasIndex;
     private readonly string? _unwindPath;
 
-    public MongoSearchExecutor(IEntitySearchMap map, string atlasIndex = DefaultAtlasIndex, string? unwindPath = null)
+    public MongoSearchExecutor(IEntitySearchMap map, string? atlasIndex = null, string? unwindPath = null)
     {
         _map = map;
         _filterTranslator = new MongoFilterTranslator<TDocument>(map);
@@ -119,7 +119,7 @@ public sealed class MongoSearchExecutor<TDocument>
             ? new BsonDocument()
             : _filterTranslator.BuildFilterDocument(request.Filter);
 
-        var searchStage = BuildSearchStage(request.Search);
+        var searchStage = BuildSearchStage(request.FullTextSearch);
         var unwindStage = _unwindPath is null ? null : new BsonDocument("$unwind", "$" + _unwindPath);
         var (projection, fields) = BuildProjection(request.Projection);
         // Con free-text e senza sort esplicito lasciamo ordinare per rilevanza (nessuno $sort); altrimenti
@@ -135,7 +135,9 @@ public sealed class MongoSearchExecutor<TDocument>
     // gli altri store lo tradurranno a modo loro senza toccare questo codice.
     private BsonDocument? BuildSearchStage(string? searchText)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
+        // Nessun indice Atlas configurato per questa entità (MongoAtlasIndex null) → niente $search, anche
+        // se c'è testo e campi IsSearchable: senza indice la query non sarebbe eseguibile su Atlas.
+        if (string.IsNullOrWhiteSpace(searchText) || _atlasIndex is null)
             return null;
 
         var paths = _map.Fields.Values

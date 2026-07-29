@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Search.Api.Contract;
 using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
 
-namespace Search.Api.Controllers;
+namespace Search.Api.Controllers.Contract;
 
 [ApiController]
 [Route("contracts")]

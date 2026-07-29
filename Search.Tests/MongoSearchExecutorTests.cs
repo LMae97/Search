@@ -70,6 +70,17 @@ public sealed class MongoSearchExecutorTests
 
     // ---------------------------------------------------------------- free-text (Atlas $search)
 
+    // Un indice Atlas esplicito: MongoAtlasIndex di default è null (l'entità non fa Atlas), quindi i test
+    // che vogliono davvero il ramo $search devono passarlo, come farebbe una config con MongoAtlasIndex impostato.
+    private static MongoSearchExecutor<BsonDocument> AtlasExecutor() => new(Map(
+        SearchEntity.Document(E),
+        Caller(),
+        Def(E, "id", FieldKind.ObjectId, "_id"),
+        Def(E, "name", FieldKind.String, "name", searchable: true),
+        Def(E, "description", FieldKind.String, "description", searchable: true),
+        Def(E, "createdAt", FieldKind.DateTime, "createdAt")),
+        atlasIndex: "test-index");
+
     [Fact]
     public void No_free_text_means_no_search_stage()
     {
@@ -79,9 +90,18 @@ public sealed class MongoSearchExecutorTests
     }
 
     [Fact]
+    public void No_atlas_index_configured_means_no_search_stage_even_with_free_text()
+    {
+        // MongoAtlasIndex non impostato (default null): niente $search anche se c'è testo e campi searchable.
+        var plan = Executor().BuildPlan(new SearchRequest { FullTextSearch = "mario", Projection = ["name"] });
+
+        Assert.Null(plan.SearchStage);
+    }
+
+    [Fact]
     public void Free_text_builds_a_compound_should_over_every_searchable_field()
     {
-        var plan = Executor().BuildPlan(new SearchRequest { Search = "mario", Projection = ["name"] });
+        var plan = AtlasExecutor().BuildPlan(new SearchRequest { FullTextSearch = "mario", Projection = ["name"] });
 
         Assert.NotNull(plan.SearchStage);
         var search = plan.SearchStage!["$search"].AsBsonDocument;
@@ -99,7 +119,7 @@ public sealed class MongoSearchExecutorTests
     [Fact]
     public void Free_text_without_explicit_sort_leaves_ordering_to_relevance()
     {
-        var plan = Executor().BuildPlan(new SearchRequest { Search = "mario", Projection = ["name"] });
+        var plan = AtlasExecutor().BuildPlan(new SearchRequest { FullTextSearch = "mario", Projection = ["name"] });
 
         Assert.Null(plan.Sort); // niente $sort → ordina lo score di Atlas
     }
@@ -107,7 +127,7 @@ public sealed class MongoSearchExecutorTests
     [Fact]
     public void Multi_token_query_asks_for_sequential_token_order()
     {
-        var plan = Executor().BuildPlan(new SearchRequest { Search = "  mario   rossi  ", Projection = ["name"] });
+        var plan = AtlasExecutor().BuildPlan(new SearchRequest { FullTextSearch = "  mario   rossi  ", Projection = ["name"] });
 
         var should = plan.SearchStage!["$search"]["compound"]["should"].AsBsonArray;
         Assert.Equal("mario rossi", should[0]["autocomplete"]["query"].AsString); // spazi collassati

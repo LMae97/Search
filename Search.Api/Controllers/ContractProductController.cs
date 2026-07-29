@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Search.Api.Contract;
+using Search.Api.Controllers.Contract;
 using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;

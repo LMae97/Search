@@ -51,12 +51,12 @@ public sealed class SearchMapBuilderTests
     [Fact]
     public void Map_drives_the_engine_free_text_over_searchable_fields()
     {
-        // La mappa costruita a mano alimenta il motore: il free-text OrContains si espande sui campi Searchable.
+        // La mappa costruita a mano alimenta il motore: il free-text si espande sui campi Searchable via Atlas.
         var map = ProductsMap();
-        var executor = new MongoSearchExecutor<BsonDocument>(map);
+        var executor = new MongoSearchExecutor<BsonDocument>(map, atlasIndex: "test-index");
 
         // Simula ciò che fa l'extension per il caso Atlas (Search resta e diventa $search).
-        var plan = executor.BuildPlan(new SearchRequest { Search = "acme", Projection = ["name"] });
+        var plan = executor.BuildPlan(new SearchRequest { FullTextSearch = "acme", Projection = ["name"] });
 
         var should = plan.SearchStage!["$search"]["compound"]["should"].AsBsonArray;
         var paths = should.Select(b => b["autocomplete"]["path"].AsString).ToList();

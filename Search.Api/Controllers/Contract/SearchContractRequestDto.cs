@@ -1,6 +1,6 @@
 using Search.Api.Dto;
 
-namespace Search.Api.Contract;
+namespace Search.Api.Controllers.Contract;
 
 /// <summary>
 /// Richiesta di ricerca contratti: la parte comune (<see cref="BaseSearchRequestDto"/>) più i filtri

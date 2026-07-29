@@ -1,7 +1,7 @@
 using Search.Api.Dto;
 using Search.Core.Filters;
 
-namespace Search.Api.Contract;
+namespace Search.Api.Controllers.Contract;
 
 /// <summary>
 /// Traduce i filtri tipizzati di <see cref="SearchContractRequestDto"/> in <see cref="FilterNode"/> — stesso

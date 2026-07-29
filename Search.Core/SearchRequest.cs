@@ -23,12 +23,7 @@ namespace Search.Core;
 /// </summary>
 public class SearchRequest
 {
-    /// <summary>
-    /// Ricerca full-text libera, <b>fratello</b> del filtro (non un nodo dell'albero): un testo che ogni store
-    /// applica a modo suo sui campi marcati <see cref="Metadata.FieldDescriptor.IsSearchable"/> — Atlas Search su
-    /// Mongo, ILIKE-OR su SQL, ecc. Il FE manda solo il testo e ignora il meccanismo sottostante. Null/vuoto = assente.
-    /// </summary>
-    public string? Search { get; init; }
+    public string? FullTextSearch { get; init; }
 
     /// <summary>Albero di filtri. Null = nessun filtro (tutti i record).</summary>
     public FilterNode? Filter { get; init; }

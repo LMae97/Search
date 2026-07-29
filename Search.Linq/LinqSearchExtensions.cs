@@ -19,9 +19,8 @@ public static class LinqSearchExtensions
     {
         var sanitized = new SearchRequestSanitizer(map).Sanitize(request);
         new SearchRequestValidator(map).Validate(sanitized);
-        var prepared = SearchTextExpansion.Apply(FreeTextSearch.OrContains, map, sanitized);
 
-        return new LinqSearchExecutor<T>(map).Execute(source, prepared);
+        return new LinqSearchExecutor<T>(map).Execute(source, sanitized);
     }
 
     public static SearchResult<IReadOnlyDictionary<string, object?>> Search<T>(

@@ -33,7 +33,7 @@ public sealed class MongoSearchHandler(
 
         // L'indice Atlas viene dalla config d'entità; per le entità OrContains resta inutilizzato (Search è già
         // stato espanso in filtro a monte, quindi il piano non produrrà alcuno stage $search).
-        var atlasIndex = config.FreeText.AtlasIndex ?? "default";
+        var atlasIndex = config.MongoAtlasIndex;
         var executor = new MongoSearchExecutor<BsonDocument>(map, atlasIndex, config.MongoUnwindPath);
         var plan = executor.BuildPlan(scoped);
 
@@ -64,7 +64,7 @@ public sealed class MongoSearchHandler(
 
         return new SearchRequest
         {
-            Search = request.Search,
+            FullTextSearch = request.FullTextSearch,
             Filter = combined,
             Projection = request.Projection,
             Sort = request.Sort,

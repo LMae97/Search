@@ -21,7 +21,6 @@ public sealed class ContractProductEntityConfig : ISearchableEntityConfig
     public string IdField => _contract.IdField;
     public IReadOnlyList<string> HiddenProjection => _contract.HiddenProjection;
     public FilterNode? AuthFilters(IVisibilityFilters? filters) => _contract.AuthFilters(filters);
-    public FreeTextSearch FreeText => FreeTextSearch.Atlas("Contract");
-
+    public string? MongoAtlasIndex => _contract.MongoAtlasIndex;
     public string? MongoUnwindPath => "contractData._products";
 }

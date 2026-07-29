@@ -23,7 +23,7 @@ public class ContractEntityConfig : ISearchableEntityConfig
         IdField
     ];
 
-    public FreeTextSearch FreeText => FreeTextSearch.Atlas("Contract");
+    public string? MongoAtlasIndex => "Contract";
 
     public FilterNode? AuthFilters(IVisibilityFilters? filters)
     {

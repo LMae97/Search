@@ -42,12 +42,12 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
     /** FLUSSO
      *   SearchHandlerBase.Search
      *     ├─ mappa effettiva → sanitize → validate
-     *     ├─ proiezione vuota → DefaultProjection() (unica risoluzione, riusata da dati E header)
-     *     ├─ SearchTextExpansion.Apply(config.FreeText, map, request)
-     *     │     ├─ OrContains → Search diventa Or(Contains…) dentro Filter, Search=null
-     *     │     └─ Atlas      → Search resta intatto
-     *     └─ Execute(config, map, prepared, spaceId)
-     *           └─ Mongo: se Search ancora valorizzato → $search; altrimenti find (col filtro espanso)
+     *     ├─ AdaptProjection: proiezione vuota → DefaultProjection() della mappa → DefaultProjection() della config
+     *     ├─ AdaptSort: sort vuoto → DefaultSort della config, poi tiebreak su IdField se non già presente
+     *     └─ Execute(config, map, resolved, spaceId)
+     *           └─ FullTextSearch passa invariato: NON è più espanso qui. È l'adapter applicativo (fuori da
+     *              questa pipeline, es. ContractBaseFilters) a decidere se tradurlo in un filtro OR-di-contains
+     *              o lasciarlo per il full-text nativo dello store (oggi solo Mongo, via MongoAtlasIndex).
      */
     public abstract StoreKind Store { get; }
 
@@ -77,17 +77,14 @@ public abstract class SearchHandlerBase(DbBackedSearchMapProvider maps) : ISearc
 
         var resolved = new SearchRequest
         {
-            Search = sanitized.Search,
+            FullTextSearch = sanitized.FullTextSearch,
             Filter = filterToUse,
             Projection = projection,
             Sort = sort,
             Page = sanitized.Page
         };
 
-        // Free-text → filtro (OrContains) oppure lasciato allo store (Atlas). Post-validazione, come il tenant scope.
-        var prepared = SearchTextExpansion.Apply(config.FreeText, map, resolved);
-
-        var result = Execute(config, map, prepared, caller.SpaceId);
+        var result = Execute(config, map, resolved, caller.SpaceId);
 
         // Stesso ordine della proiezione risolta (non l'ordine interno di map.Fields, arbitrario/non garantito).
         var prjFields = projection.Select(name => map.Fields[name]);
