@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Metadato di cancellazione logica (soft delete). Il record resta nel DB ma viene

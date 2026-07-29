@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Radice di aggregato: è il confine di consistenza transazionale e l'unico punto

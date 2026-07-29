@@ -1,10 +1,10 @@
 using MongoDB.Bson;
-using Search.Core;
-using Search.Core.Fluent;
-using Search.Core.Metadata;
-using Search.Mongo;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Fluent;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Mongo;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>
 /// Il builder code-first: costruisce una mappa in poche righe e produce gli stessi descrittori del percorso

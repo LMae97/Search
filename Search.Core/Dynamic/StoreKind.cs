@@ -1,4 +1,4 @@
-namespace Search.Core.Dynamic;
+namespace WeByte.Search.Core.Dynamic;
 
 /// <summary>Tipo di store di un'entità, che determina come si interpreta il path di un campo.</summary>
 public enum StoreKind

@@ -1,8 +1,8 @@
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Filters;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
 
-namespace Search.Application.Config;
+namespace WeByte.Search.Application.Config;
 
 /// <summary>
 /// Ricerca "a livello di prodotto": stessa collection/stessi campi di <see cref="ContractEntityConfig"/> (i

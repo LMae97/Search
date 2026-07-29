@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
-using Search.Core;
-using Search.Core.Metadata;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Linq;
+namespace WeByte.Search.Linq;
 
 /// <summary>
 /// Esegue una <see cref="SearchRequest"/> su un <see cref="IQueryable{T}"/> (EF Core o
@@ -33,6 +33,9 @@ public sealed class LinqSearchExecutor<TEntity>
 
     public SearchResult<IReadOnlyDictionary<string, object?>> Execute(IQueryable<TEntity> source, SearchRequest request)
     {
+        if (request.FullTextSearch != null)
+            throw new Exception("[LINQ SEARCH]: Full Text Search not supported");
+
         var query = source;
 
         if (request.Filter is not null)

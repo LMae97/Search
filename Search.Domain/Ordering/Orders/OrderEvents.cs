@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Ordering.Orders;
+namespace WeByte.Search.Domain.Ordering.Orders;
 
 public sealed record OrderPlacedDomainEvent(
     Guid OrderId,

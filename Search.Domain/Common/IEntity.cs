@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Contratto minimo di un'entità di dominio: possiede un'identità stabile di tipo

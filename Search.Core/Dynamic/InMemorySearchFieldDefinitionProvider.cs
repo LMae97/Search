@@ -1,4 +1,4 @@
-namespace Search.Core.Dynamic;
+namespace WeByte.Search.Core.Dynamic;
 
 /// <summary>Implementazione in memoria di <see cref="ISearchFieldDefinitionProvider"/> (demo/test).</summary>
 public sealed class InMemorySearchFieldDefinitionProvider : ISearchFieldDefinitionProvider

@@ -1,11 +1,11 @@
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Filters;
-using Search.Core.Metadata;
-using Search.Core.Validation;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Core.Validation;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>La barriera di sicurezza: nessun campo/operatore fuori whitelist arriva al translator.</summary>
 public sealed class SearchRequestValidatorTests

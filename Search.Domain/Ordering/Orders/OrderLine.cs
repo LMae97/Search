@@ -1,7 +1,7 @@
-using Search.Domain.Common;
-using Search.Domain.Common.ValueObjects;
+using WeByte.Search.Domain.Common;
+using WeByte.Search.Domain.Common.ValueObjects;
 
-namespace Search.Domain.Ordering.Orders;
+namespace WeByte.Search.Domain.Ordering.Orders;
 
 /// <summary>
 /// Riga d'ordine. Entità <b>interna</b> all'aggregato <see cref="Order"/>: si crea e si modifica

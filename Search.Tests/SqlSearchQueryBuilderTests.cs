@@ -1,10 +1,10 @@
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
-using Search.Sql;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Sql;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>Assemblaggio della query SQL completa: proiezione, join condizionali, @space, ORDER BY di default, count.</summary>
 public sealed class SqlSearchQueryBuilderTests

@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Catalog.Products.ValueObjects;
+namespace WeByte.Search.Domain.Catalog.Products.ValueObjects;
 
 /// <summary>
 /// Stock Keeping Unit: codice identificativo del prodotto. Normalizzato (trim + maiuscolo)

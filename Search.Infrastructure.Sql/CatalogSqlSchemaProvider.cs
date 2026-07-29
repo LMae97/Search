@@ -1,6 +1,6 @@
-using Search.Sql;
+using WeByte.Search.Sql;
 
-namespace Search.Infrastructure.Sql;
+namespace WeByte.Search.Infrastructure.Sql;
 
 /// <summary>
 /// Configurazioni SQL delle entità del catalogo per lo store "raw" (<see cref="Dynamic.StoreKind.PostgresRaw"/>),

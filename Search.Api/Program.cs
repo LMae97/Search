@@ -1,13 +1,13 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using Search.Application.Querying;
-using Search.Application.Querying.Dynamic;
-using Search.Core.Dynamic;
-using Search.Core.Validation;
-using Search.Api.Serialization;
-using Search.Infrastructure.Sql;
-using Search.Infrastructure.Mongo;
-using Search.Sql;
+using WeByte.Search.Application.Querying;
+using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Validation;
+using WeByte.Search.Api.Serialization;
+using WeByte.Search.Infrastructure.Sql;
+using WeByte.Search.Infrastructure.Mongo;
+using WeByte.Search.Sql;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);

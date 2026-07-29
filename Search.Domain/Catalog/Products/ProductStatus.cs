@@ -1,4 +1,4 @@
-namespace Search.Domain.Catalog.Products;
+namespace WeByte.Search.Domain.Catalog.Products;
 
 /// <summary>Ciclo di vita di un prodotto a catalogo.</summary>
 public enum ProductStatus

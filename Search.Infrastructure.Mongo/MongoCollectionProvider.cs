@@ -1,7 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Search.Infrastructure.Mongo;
+namespace WeByte.Search.Infrastructure.Mongo;
 
 /// <summary>
 /// Fornisce la <see cref="IMongoCollection{TDocument}"/> (schemaless, <see cref="BsonDocument"/>) per

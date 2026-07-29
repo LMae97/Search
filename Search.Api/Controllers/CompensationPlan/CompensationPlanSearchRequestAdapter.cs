@@ -1,8 +1,8 @@
-﻿using Search.Api.Dto;
-using Search.Core;
-using Search.Core.Filters;
+﻿using WeByte.Search.Api.Dto;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Filters;
 
-namespace Search.Api.Controllers.CompensationPlan;
+namespace WeByte.Search.Api.Controllers.CompensationPlan;
 
 public class CompensationPlanSearchRequestAdapter
 {

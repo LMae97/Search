@@ -1,15 +1,15 @@
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using Search.Application.Config;
-using Search.Application.Querying;
-using Search.Application.Querying.Dynamic;
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Filters;
-using Search.Core.Metadata;
-using Search.Mongo;
+using WeByte.Search.Application.Config;
+using WeByte.Search.Application.Querying;
+using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Mongo;
 
-namespace Search.Infrastructure.Mongo;
+namespace WeByte.Search.Infrastructure.Mongo;
 
 /// <summary>
 /// Handler di ricerca per lo store <b>Mongo</b>: serve tutte le entità documentali, risolvendo mappa e

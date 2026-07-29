@@ -1,6 +1,6 @@
 using System.Data.Common;
 
-namespace Search.Sql;
+namespace WeByte.Search.Sql;
 
 /// <summary>
 /// Esegue un <see cref="SqlQueryPlan"/> parametrizzato su una qualsiasi connessione ADO.NET

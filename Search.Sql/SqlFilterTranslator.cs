@@ -1,7 +1,7 @@
-using Search.Core.Filters;
-using Search.Core.Metadata;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Sql;
+namespace WeByte.Search.Sql;
 
 /// <summary>
 /// Traduce l'albero di filtri store-agnostic in un frammento di <b>SQL testuale parametrizzato</b>

@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Ordering.Orders.ValueObjects;
+namespace WeByte.Search.Domain.Ordering.Orders.ValueObjects;
 
 /// <summary>Indirizzo postale. Value object immutabile, embedded nel documento ordine (Mongo).</summary>
 public sealed class Address : ValueObject

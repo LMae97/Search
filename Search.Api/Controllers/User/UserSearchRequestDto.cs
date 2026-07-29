@@ -1,6 +1,6 @@
-﻿using Search.Api.Dto;
+﻿using WeByte.Search.Api.Dto;
 
-namespace Search.Api.Controllers.User;
+namespace WeByte.Search.Api.Controllers.User;
 
 public sealed class UserSearchRequestDto : BaseSearchRequestDto
 {

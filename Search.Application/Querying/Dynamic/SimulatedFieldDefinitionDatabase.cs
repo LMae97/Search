@@ -1,7 +1,7 @@
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Application.Querying.Dynamic;
+namespace WeByte.Search.Application.Querying.Dynamic;
 
 /// <summary>
 /// SEED che simula il contenuto della tabella delle definizioni dei campi (in attesa del provider su DB).

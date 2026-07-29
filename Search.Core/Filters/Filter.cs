@@ -1,4 +1,4 @@
-namespace Search.Core.Filters;
+namespace WeByte.Search.Core.Filters;
 
 /// <summary>
 /// Factory fluente per costruire alberi di filtri in modo leggibile nel codice/test:

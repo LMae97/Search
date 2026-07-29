@@ -1,7 +1,7 @@
 using System.Data.Common;
 using Npgsql;
 
-namespace Search.Infrastructure.Sql;
+namespace WeByte.Search.Infrastructure.Sql;
 
 /// <summary>
 /// Crea connessioni ADO.NET verso il DB del catalogo, per l'esecuzione della ricerca SQL grezza

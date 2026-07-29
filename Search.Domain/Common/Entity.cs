@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Base per le entità di dominio. L'uguaglianza è per <b>identità</b> (stesso tipo + stesso Id),

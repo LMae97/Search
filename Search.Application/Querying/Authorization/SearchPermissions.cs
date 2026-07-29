@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Authorization;
+namespace WeByte.Search.Application.Querying.Authorization;
 
 /// <summary>
 /// Placeholder dei permessi usati nella demo. In un progetto reale questi Guid verrebbero

@@ -1,10 +1,10 @@
-using Search.Core.Dynamic;
-using Search.Core.Filters;
-using Search.Core.Metadata;
-using Search.Sql;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Sql;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>
 /// Copertura esaustiva del translator SQL: matrice tipo × operatore. I valori utente diventano SEMPRE

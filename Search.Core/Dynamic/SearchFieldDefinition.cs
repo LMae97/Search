@@ -1,6 +1,6 @@
-using Search.Core.Metadata;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Core.Dynamic;
+namespace WeByte.Search.Core.Dynamic;
 
 /// <summary>
 /// Definizione a DB di un campo di ricerca — unica per campi statici e dinamici, per entrambi gli store.

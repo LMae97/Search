@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Ordering.Orders.ValueObjects;
+namespace WeByte.Search.Domain.Ordering.Orders.ValueObjects;
 
 /// <summary>
 /// Snapshot dei dati cliente al momento dell'ordine (denormalizzato). Il cliente "vero"

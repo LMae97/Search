@@ -1,11 +1,11 @@
 using MongoDB.Bson;
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
-using Search.Mongo;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Mongo;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>Costruzione del piano Mongo (proiezione/sort) senza toccare il database.</summary>
 public sealed class MongoSearchExecutorTests

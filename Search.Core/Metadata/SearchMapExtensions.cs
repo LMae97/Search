@@ -1,4 +1,4 @@
-namespace Search.Core.Metadata;
+namespace WeByte.Search.Core.Metadata;
 
 /// <summary>
 /// Helper condivisi sulla mappa dei campi, per non duplicare due regole trasversali nei tre store:

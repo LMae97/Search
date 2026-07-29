@@ -1,8 +1,8 @@
-using Search.Core;
-using Search.Core.Filters;
-using Search.Core.Metadata;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Sql;
+namespace WeByte.Search.Sql;
 
 /// <summary>
 /// Assembla una query SQL <b>completa e parametrizzata</b> per uno store "raw" (<see cref="Dynamic.StoreKind.PostgresRaw"/>):
@@ -26,6 +26,9 @@ public sealed class SqlSearchQueryBuilder
     /// <summary>Query dati: <c>SELECT … FROM … WHERE … ORDER BY … LIMIT/OFFSET</c>.</summary>
     public SqlQueryPlan Build(SearchRequest request, Guid spaceId)
     {
+        if (request.FullTextSearch != null)
+            throw new Exception("[SQL SEARCH]: Full Text Search not supported");
+
         var names = ResolveProjection(request.Projection);
         var parameters = new Dictionary<string, object?>();
 

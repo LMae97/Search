@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Base per i value object: nessuna identità, uguaglianza <b>strutturale</b> (per valore)

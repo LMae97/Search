@@ -1,6 +1,6 @@
-﻿using Search.Api.Dto;
+﻿using WeByte.Search.Api.Dto;
 
-namespace Search.Api.Controllers.CompensationPlan;
+namespace WeByte.Search.Api.Controllers.CompensationPlan;
 
 public sealed class CompensationPlanSearchRequestDto : BaseSearchRequestDto
 {

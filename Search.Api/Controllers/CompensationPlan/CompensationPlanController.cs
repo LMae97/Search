@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Search.Application.Config;
-using Search.Application.Querying;
-using Search.Application.Querying.Authorization;
-using Search.Application.Querying.Dynamic;
+using WeByte.Search.Application.Config;
+using WeByte.Search.Application.Querying;
+using WeByte.Search.Application.Querying.Authorization;
+using WeByte.Search.Application.Querying.Dynamic;
 
-namespace Search.Api.Controllers.CompensationPlan;
+namespace WeByte.Search.Api.Controllers.CompensationPlan;
 
 [ApiController]
 [Route("compensation-plans")]

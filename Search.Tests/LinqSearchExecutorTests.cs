@@ -1,11 +1,11 @@
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Filters;
-using Search.Linq;
-using Search.Core.Metadata;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Linq;
+using WeByte.Search.Core.Metadata;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>
 /// Esecuzione end-to-end su LINQ-to-Objects: filtro + sort + proiezione + paginazione girano davvero,

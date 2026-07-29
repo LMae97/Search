@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Colonne di audit comuni. Popolate automaticamente dall'infrastruttura

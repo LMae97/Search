@@ -1,8 +1,8 @@
-using Search.Core;
-using Search.Core.Metadata;
-using Search.Core.Validation;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Core.Validation;
 
-namespace Search.Linq;
+namespace WeByte.Search.Linq;
 
 /// <summary>
 /// Ingresso "senza cerimonie" per cercare su una sorgente LINQ (IQueryable EF o oggetti in memoria): mappa +

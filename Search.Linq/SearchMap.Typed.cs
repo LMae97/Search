@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using Search.Core.Metadata;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Linq;
+namespace WeByte.Search.Linq;
 
 /// <summary>
 /// Entry point del builder type-safe (store LINQ/EF). Non è <c>partial</c> con <c>Search.Core.Fluent.SearchMap</c>

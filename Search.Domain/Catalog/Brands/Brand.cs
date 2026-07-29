@@ -1,7 +1,7 @@
-using Search.Domain.Catalog.Tags;
-using Search.Domain.Common;
+using WeByte.Search.Domain.Catalog.Tags;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Catalog.Brands;
+namespace WeByte.Search.Domain.Catalog.Brands;
 
 /// <summary>
 /// Marca/produttore a catalogo. Aggregato radice persistito su PostgreSQL.

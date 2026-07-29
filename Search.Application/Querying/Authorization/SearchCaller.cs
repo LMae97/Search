@@ -1,4 +1,4 @@
-namespace Search.Application.Querying.Authorization;
+namespace WeByte.Search.Application.Querying.Authorization;
 
 /// <summary>
 /// Rappresenta l'entità che sta eseguendo la ricerca. Lo fornisce il layer web a partire dall'utente autenticato.

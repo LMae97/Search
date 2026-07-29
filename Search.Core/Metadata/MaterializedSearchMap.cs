@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Search.Core.Metadata;
+namespace WeByte.Search.Core.Metadata;
 
 /// <summary>
 /// Mappa "materializzata" da un insieme di descrittori già pronti (non da selettori in codice).

@@ -1,10 +1,10 @@
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Filters;
-using Search.Core.Metadata;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>Il sanitizer POTA (non rifiuta) i riferimenti a campi assenti, prima della validazione dura.</summary>
 public sealed class SearchRequestSanitizerTests

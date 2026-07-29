@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Fatto di dominio già accaduto (nome al passato: <c>OrderPlaced</c>, <c>ProductPriceChanged</c>).

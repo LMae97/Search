@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Catalog.Products;
+namespace WeByte.Search.Domain.Catalog.Products;
 
 public sealed record ProductPriceChangedDomainEvent(
     Guid ProductId,

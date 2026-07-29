@@ -1,11 +1,11 @@
 using MongoDB.Bson;
-using Search.Core.Dynamic;
-using Search.Core.Filters;
-using Search.Core.Metadata;
-using Search.Mongo;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Mongo;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>
 /// Copertura esaustiva del translator Mongo: matrice tipo × operatore. La coercizione del valore

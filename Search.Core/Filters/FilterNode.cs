@@ -1,4 +1,4 @@
-namespace Search.Core.Filters;
+namespace WeByte.Search.Core.Filters;
 
 /// <summary>
 /// Nodo dell'albero di filtri. È la rappresentazione interna, store-agnostic:

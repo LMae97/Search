@@ -1,8 +1,8 @@
-using Search.Api.Dto;
-using Search.Core;
-using Search.Core.Filters;
+using WeByte.Search.Api.Dto;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Filters;
 
-namespace Search.Api.Controllers.Contract;
+namespace WeByte.Search.Api.Controllers.Contract;
 
 /// <summary>
 /// Combina la parte generica (<see cref="BaseSearchRequestDtoAdapter"/>) con i filtri specifici dei

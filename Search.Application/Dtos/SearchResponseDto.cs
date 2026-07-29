@@ -1,7 +1,7 @@
-﻿using Search.Core;
-using Search.Core.Metadata;
+﻿using WeByte.Search.Core;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Application.Dtos;
+namespace WeByte.Search.Application.Dtos;
 
 public class SearchResponseDto
 {

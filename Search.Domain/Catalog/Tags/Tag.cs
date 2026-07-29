@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Catalog.Tags;
+namespace WeByte.Search.Domain.Catalog.Tags;
 
 /// <summary>
 /// Etichetta riutilizzabile del catalogo. È un aggregato radice a sé: lo stesso tag è condiviso

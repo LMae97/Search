@@ -1,4 +1,4 @@
-namespace Search.Domain.Ordering.Orders;
+namespace WeByte.Search.Domain.Ordering.Orders;
 
 /// <summary>Stati dell'ordine. Le transizioni valide sono imposte dai metodi di <c>Order</c>.</summary>
 public enum OrderStatus

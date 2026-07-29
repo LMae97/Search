@@ -1,6 +1,6 @@
-﻿using Search.Core.Filters;
+﻿using WeByte.Search.Core.Filters;
 
-namespace Search.Core;
+namespace WeByte.Search.Core;
 
 /** Esempio di richiesta:
  * {

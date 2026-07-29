@@ -1,9 +1,9 @@
 using MongoDB.Driver;
-using Search.Core;
-using Search.Core.Metadata;
-using Search.Core.Validation;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Core.Validation;
 
-namespace Search.Mongo;
+namespace WeByte.Search.Mongo;
 
 /// <summary>
 /// Ingresso "senza cerimonie" per chi vuole solo cercare su una collection: mappa + richiesta → risultati, in

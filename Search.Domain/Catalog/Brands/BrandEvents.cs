@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Catalog.Brands;
+namespace WeByte.Search.Domain.Catalog.Brands;
 
 public sealed record BrandCreatedDomainEvent(Guid BrandId, string Code, string Name) : DomainEvent;
 

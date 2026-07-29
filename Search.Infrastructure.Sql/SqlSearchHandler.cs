@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
-using Search.Application.Config;
-using Search.Application.Querying;
-using Search.Application.Querying.Dynamic;
-using Search.Core;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
-using Search.Sql;
+using WeByte.Search.Application.Config;
+using WeByte.Search.Application.Querying;
+using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Sql;
 
-namespace Search.Infrastructure.Sql;
+namespace WeByte.Search.Infrastructure.Sql;
 
 /// <summary>
 /// Handler di ricerca per lo store <b>PostgresRaw</b>: serve <b>tutte</b> le entità di quello store

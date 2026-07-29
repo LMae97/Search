@@ -2,14 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>WeByte.Search.Application</RootNamespace>
+    <RootNamespace>WeByte.Search.Application.Analytics</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Search.Core\Search.Core.csproj" />
-  </ItemGroup>
 
 </Project>

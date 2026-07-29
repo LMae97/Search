@@ -1,6 +1,6 @@
-using Search.Core.Metadata;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Application.Querying.Authorization;
+namespace WeByte.Search.Application.Querying.Authorization;
 
 /// <summary>
 /// Costruisce la mappa <b>effettiva</b> per un <see cref="SearchCaller"/>: tiene solo i campi che

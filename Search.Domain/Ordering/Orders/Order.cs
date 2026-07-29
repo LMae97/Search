@@ -1,8 +1,8 @@
-using Search.Domain.Common;
-using Search.Domain.Common.ValueObjects;
-using Search.Domain.Ordering.Orders.ValueObjects;
+using WeByte.Search.Domain.Common;
+using WeByte.Search.Domain.Common.ValueObjects;
+using WeByte.Search.Domain.Ordering.Orders.ValueObjects;
 
-namespace Search.Domain.Ordering.Orders;
+namespace WeByte.Search.Domain.Ordering.Orders;
 
 /// <summary>
 /// Ordine. Aggregato radice persistito su MongoDB come singolo documento, con le righe

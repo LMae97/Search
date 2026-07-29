@@ -1,4 +1,4 @@
-namespace Search.Domain.Common.ValueObjects;
+namespace WeByte.Search.Domain.Common.ValueObjects;
 
 /// <summary>
 /// Importo monetario: coppia (importo, valuta ISO 4217). Immutabile; le operazioni

@@ -1,9 +1,9 @@
-using Search.Application.Querying.Authorization;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
-using static Search.Tests.TestSupport;
+using WeByte.Search.Application.Querying.Authorization;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
+using static WeByte.Search.Tests.TestSupport;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>Autorizzazione: "niente permesso ⇒ campo assente" dalla mappa effettiva (whitelist di sicurezza).</summary>
 public sealed class EffectiveSearchMapTests

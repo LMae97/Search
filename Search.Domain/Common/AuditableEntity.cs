@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Entità con colonne di audit e soft delete. I setter sono privati: lo stato di audit

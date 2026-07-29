@@ -1,8 +1,8 @@
-using Search.Application.Querying.Authorization;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
+using WeByte.Search.Application.Querying.Authorization;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Application.Querying.Dynamic;
+namespace WeByte.Search.Application.Querying.Dynamic;
 
 /// <summary>
 /// Costruisce la mappa effettiva per una richiesta a partire dalle <see cref="SearchFieldDefinition"/>

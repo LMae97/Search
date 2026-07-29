@@ -1,6 +1,6 @@
-using Search.Api.Dto;
+using WeByte.Search.Api.Dto;
 
-namespace Search.Api.Controllers.Contract;
+namespace WeByte.Search.Api.Controllers.Contract;
 
 /// <summary>
 /// Richiesta di ricerca contratti: la parte comune (<see cref="BaseSearchRequestDto"/>) più i filtri

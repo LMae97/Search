@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Search.Core.Metadata;
+namespace WeByte.Search.Core.Metadata;
 
 /// <summary>
 /// Ricostruisce un selettore (<c>x =&gt; x.Seg1.Seg2...</c>) da una property-path testuale (es. "Price.Amount")

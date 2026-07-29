@@ -1,4 +1,4 @@
-namespace Search.Core.Dynamic;
+namespace WeByte.Search.Core.Dynamic;
 
 /// <summary>
 /// Registrazione di un'entità ricercabile: nome pubblico, tipo di store e — solo per <see cref="StoreKind.PostgresEF"/> —

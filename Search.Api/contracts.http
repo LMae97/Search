@@ -28,14 +28,17 @@ POST {{baseUrl}}/contracts/search
 Content-Type: {{contentType}}
 
 {
-    "search": "maestrini",
+    "search": "maes",
     "status": [],
     "statusType": [],
     "organizations": [],
     "orgMembers": [],
     "products": [],
     "productOptions": [],
-    "brands": [],
+    "brands": [
+      "75b1a5db-6828-4000-a4bb-caab2ea3234b",
+      "72ec827d-eb83-44ed-acb5-76bd1f2832cf"
+    ],
     "workProfiles": [],
     "assignees": [],
     "paid": [],
@@ -46,7 +49,10 @@ Content-Type: {{contentType}}
         "columns": [
           "code",
           "createdAt",
-          "brand"
+          "brand",
+          "brandId",
+          "customerDetailsFirstName", 
+          "customerDetailsLastName"
         ],
         "page": 1,
         "pageSize": 100

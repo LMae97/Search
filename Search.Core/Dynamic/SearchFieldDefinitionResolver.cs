@@ -1,6 +1,6 @@
-using Search.Core.Metadata;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Core.Dynamic;
+namespace WeByte.Search.Core.Dynamic;
 
 /// <summary>
 /// Trasforma una <see cref="SearchFieldDefinition"/> in un <see cref="FieldDescriptor"/> eseguibile,

@@ -1,9 +1,9 @@
-using Search.Domain.Catalog.Products.ValueObjects;
-using Search.Domain.Catalog.Tags;
-using Search.Domain.Common;
-using Search.Domain.Common.ValueObjects;
+using WeByte.Search.Domain.Catalog.Products.ValueObjects;
+using WeByte.Search.Domain.Catalog.Tags;
+using WeByte.Search.Domain.Common;
+using WeByte.Search.Domain.Common.ValueObjects;
 
-namespace Search.Domain.Catalog.Products;
+namespace WeByte.Search.Domain.Catalog.Products;
 
 /// <summary>
 /// Prodotto a catalogo. Aggregato radice persistito su PostgreSQL.

@@ -1,14 +1,13 @@
-using Search.Application.Config;
-using Search.Core;
-using Search.Application.Querying.Authorization;
-using Search.Application.Querying.Dynamic;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
-using Search.Core.Validation;
-using Search.Application.Dtos;
-using Search.Core.Filters;
+using WeByte.Search.Application.Config;
+using WeByte.Search.Core;
+using WeByte.Search.Application.Querying.Authorization;
+using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
+using WeByte.Search.Core.Validation;
+using WeByte.Search.Application.Dtos;
 
-namespace Search.Application.Querying;
+namespace WeByte.Search.Application.Querying;
 
 /// <summary>
 /// Ingresso unico e store-agnostic per le ricerche: data la chiave-entità delega alla strategia dello store

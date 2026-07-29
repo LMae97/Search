@@ -1,6 +1,6 @@
-using Search.Core.Filters;
+using WeByte.Search.Core.Filters;
 
-namespace Search.Core.Metadata;
+namespace WeByte.Search.Core.Metadata;
 
 /// <summary>
 /// Regole tipo→operatore: dato il <see cref="FieldKind"/> e l'essere array, quali operatori

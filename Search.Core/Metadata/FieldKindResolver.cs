@@ -1,4 +1,4 @@
-namespace Search.Core.Metadata;
+namespace WeByte.Search.Core.Metadata;
 
 /// <summary>
 /// Deriva la categoria di tipo (<see cref="FieldKind"/>) e il tipo CLR sottostante (nullable scartato)

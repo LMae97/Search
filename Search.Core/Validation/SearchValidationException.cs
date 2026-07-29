@@ -1,4 +1,4 @@
-namespace Search.Core.Validation;
+namespace WeByte.Search.Core.Validation;
 
 /// <summary>
 /// Richiesta di ricerca non valida. Raccoglie <b>tutti</b> gli errori in un colpo solo

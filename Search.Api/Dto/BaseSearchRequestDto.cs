@@ -1,4 +1,4 @@
-namespace Search.Api.Dto;
+namespace WeByte.Search.Api.Dto;
 
 /// <summary>
 /// Contratto base della richiesta di ricerca lato FE, comune a ogni entità. Le entità specifiche

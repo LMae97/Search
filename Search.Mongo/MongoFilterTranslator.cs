@@ -1,9 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Search.Core.Filters;
-using Search.Core.Metadata;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Mongo;
+namespace WeByte.Search.Mongo;
 
 /// <summary>
 /// Traduce lo <b>stesso</b> albero di filtri in una query MongoDB (<see cref="FilterDefinition{TDocument}"/>).

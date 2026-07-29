@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Search.Core;
-using Search.Core.Filters;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Filters;
 
-namespace Search.Api.Dto;
+namespace WeByte.Search.Api.Dto;
 
 /// <summary>
 /// Traduce la parte <b>comune a ogni entità</b> di <see cref="BaseSearchRequestDto"/> (ricerca libera,

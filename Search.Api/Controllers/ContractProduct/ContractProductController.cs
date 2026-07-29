@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Search.Api.Controllers.Contract;
-using Search.Application.Config;
-using Search.Application.Querying;
-using Search.Application.Querying.Authorization;
-using Search.Application.Querying.Dynamic;
+using WeByte.Search.Api.Controllers.Contract;
+using WeByte.Search.Application.Config;
+using WeByte.Search.Application.Querying;
+using WeByte.Search.Application.Querying.Authorization;
+using WeByte.Search.Application.Querying.Dynamic;
 
-namespace Search.Api.Controllers.ContractProduct;
+namespace WeByte.Search.Api.Controllers.ContractProduct;
 
 /// <summary>
 /// Ricerca "a livello di prodotto" (ogni prodotto di un contratto è una riga indipendente) — equivalente al

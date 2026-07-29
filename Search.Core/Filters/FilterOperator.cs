@@ -1,4 +1,4 @@
-namespace Search.Core.Filters;
+namespace WeByte.Search.Core.Filters;
 
 /// <summary>
 /// Operatori applicabili a un campo. Quali siano ammessi per uno specifico campo dipende dal

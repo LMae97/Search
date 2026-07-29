@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Search.Core.Filters;
+using WeByte.Search.Core.Filters;
 
-namespace Search.Api.Serialization;
+namespace WeByte.Search.Api.Serialization;
 
 /// <summary>
 /// Deserializza l'albero di filtri dal JSON del FE. Contratto:

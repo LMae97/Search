@@ -1,9 +1,9 @@
-using Search.Application.Querying.Authorization;
-using Search.Application.Querying.Dynamic;
-using Search.Core.Dynamic;
-using Search.Core.Metadata;
+using WeByte.Search.Application.Querying.Authorization;
+using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Core.Dynamic;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>
 /// Helper condivisi ai test. Punto chiave: la mappa effettiva si costruisce passando per il

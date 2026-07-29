@@ -1,6 +1,6 @@
-using Search.Domain.Common;
+using WeByte.Search.Domain.Common;
 
-namespace Search.Domain.Catalog.Products.ValueObjects;
+namespace WeByte.Search.Domain.Catalog.Products.ValueObjects;
 
 /// <summary>Ingombro fisico del prodotto, in millimetri.</summary>
 public sealed class Dimensions : ValueObject

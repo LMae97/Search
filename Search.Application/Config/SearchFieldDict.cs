@@ -1,4 +1,4 @@
-﻿namespace Search.Application.Config;
+﻿namespace WeByte.Search.Application.Config;
 
 public class SearchFieldDict
 {

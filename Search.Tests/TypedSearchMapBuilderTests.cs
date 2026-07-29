@@ -1,9 +1,9 @@
-using Search.Core;
-using Search.Core.Filters;
-using Search.Linq;
-using Search.Core.Metadata;
+using WeByte.Search.Core;
+using WeByte.Search.Core.Filters;
+using WeByte.Search.Linq;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Tests;
+namespace WeByte.Search.Tests;
 
 /// <summary>
 /// Il builder type-safe <c>SearchMap.For&lt;T&gt;()</c>: nome e tipo dei campi dedotti dalle espressioni, poi

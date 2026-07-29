@@ -1,4 +1,4 @@
-namespace Search.Domain.Common;
+namespace WeByte.Search.Domain.Common;
 
 /// <summary>
 /// Violazione di una regola/invariante di dominio. Va tradotta dall'applicazione

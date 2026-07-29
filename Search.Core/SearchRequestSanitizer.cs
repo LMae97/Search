@@ -1,7 +1,7 @@
-﻿using Search.Core.Filters;
-using Search.Core.Metadata;
+﻿using WeByte.Search.Core.Filters;
+using WeByte.Search.Core.Metadata;
 
-namespace Search.Core;
+namespace WeByte.Search.Core;
 
 /// <summary>
 /// Adatta una richiesta alla mappa effettiva dell'utente <b>rimuovendo</b> (non rifiutando) i
