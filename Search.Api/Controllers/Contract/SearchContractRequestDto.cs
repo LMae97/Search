@@ -7,7 +7,7 @@ namespace Search.Api.Controllers.Contract;
 /// tipizzati specifici di questo contesto, tradotti da <see cref="ContractBaseFilters"/> — stesso ruolo
 /// del vecchio <c>SearchContractRequestDto</c>/<c>SearchContractBaseFilters</c>.
 /// </summary>
-public sealed class SearchContractRequestDto : BaseSearchRequestDto
+public class SearchContractRequestDto : BaseSearchRequestDto
 {
     public DateOnlyRangeDto? SignatureDate { get; set; }
     public DateOnlyRangeDto? CreatedAtDate { get; set; }

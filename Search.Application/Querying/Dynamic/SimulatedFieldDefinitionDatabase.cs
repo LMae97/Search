@@ -109,6 +109,10 @@ public static class SimulatedFieldDefinitionDatabase
         rows.Add(new SearchFieldDefinition("workProfile", "spaceId", FieldKind.Guid, false, false, "workProfile.\"SpaceId\""));
 
         rows.Add(new SearchFieldDefinition("compensationPlan", "id", FieldKind.ObjectId, false, false, "_id"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "brandId", FieldKind.Guid, false, false, "brand.value"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "brandName", FieldKind.String, false, false, "brand.label"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "workProfileId", FieldKind.Guid, false, false, "workProfile.value"));
+        rows.Add(new SearchFieldDefinition("compensationPlan", "workProfileName", FieldKind.String, false, false, "workProfile.label"));
         rows.Add(new SearchFieldDefinition("compensationPlan", "createdAt", FieldKind.DateTime, false, false, "createdAt"));
         rows.Add(new SearchFieldDefinition("compensationPlan", "updatedAt", FieldKind.DateTime, false, false, "updatedAt"));
         rows.Add(new SearchFieldDefinition("compensationPlan", "createdByValue", FieldKind.String, false, false, "createdBy.value", Label: "Creato da (id)"));

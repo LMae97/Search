@@ -5,7 +5,7 @@ using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
 
-namespace Search.Api.Controllers;
+namespace Search.Api.Controllers.ContractProduct;
 
 /// <summary>
 /// Ricerca "a livello di prodotto" (ogni prodotto di un contratto è una riga indipendente) — equivalente al
@@ -24,7 +24,7 @@ public sealed class ContractProductController : ControllerBase
     }
 
     [HttpPost("search")]
-    public IActionResult Search(SearchContractRequestDto request)
+    public IActionResult Search(ContractProductSearchRequestDto request)
     {
         var caller = new SearchCaller(
             SimulatedFieldDefinitionDatabase.DemoSpace,

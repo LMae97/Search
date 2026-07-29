@@ -20,31 +20,24 @@ public static class ContractBaseFilters
     {
         var filters = new List<FilterNode>();
 
-        AddIn(filters, "statusId", req.Status?.Select(id => id.ToString()));
-        AddIn(filters, "statusTypeId", req.StatusType);
-        AddIn(filters, "automationStatusResumeId", req.AutomationStatus);
-        AddIn(filters, "orgMemberId", req.OrgMembers?.Select(id => (object?)id));
-        AddIn(filters, "brandId", req.Brands?.Select(id => (object?)id));
-        AddIn(filters, "workProfileId", req.WorkProfiles?.Select(id => (object?)id));
-        AddIn(filters, "product", req.Products);
-        AddIn(filters, "optionIds", req.ProductOptions);
-        AddIn(filters, "productStatusTypeId", req.ProductSuperstates);
-        AddIn(filters, "productCategoryId", req.ProductCategories?.Select(id => id.ToString()));
-        AddIn(filters, "organizationId", req.Organizations?.Select(id => (object?)id));
+        BaseSearchRequestDtoAdapter.AddIn(filters, "statusId", req.Status?.Select(id => id.ToString()));
+        BaseSearchRequestDtoAdapter.AddIn(filters, "statusTypeId", req.StatusType);
+        BaseSearchRequestDtoAdapter.AddIn(filters, "automationStatusResumeId", req.AutomationStatus);
+        BaseSearchRequestDtoAdapter.AddIn(filters, "orgMemberId", req.OrgMembers?.Select(id => (object?)id));
+        BaseSearchRequestDtoAdapter.AddIn(filters, "brandId", req.Brands?.Select(id => (object?)id));
+        BaseSearchRequestDtoAdapter.AddIn(filters, "workProfileId", req.WorkProfiles?.Select(id => (object?)id));
+        BaseSearchRequestDtoAdapter.AddIn(filters, "product", req.Products);
+        BaseSearchRequestDtoAdapter.AddIn(filters, "optionIds", req.ProductOptions);
+        BaseSearchRequestDtoAdapter.AddIn(filters, "productStatusTypeId", req.ProductSuperstates);
+        BaseSearchRequestDtoAdapter.AddIn(filters, "productCategoryId", req.ProductCategories?.Select(id => id.ToString()));
+        BaseSearchRequestDtoAdapter.AddIn(filters, "organizationId", req.Organizations?.Select(id => (object?)id));
 
         AddAssignees(filters, req.Assignees, currentUserId);
-        AddDateRange(filters, "signatureDate", req.SignatureDate);
-        AddDateRange(filters, "createdAt", req.CreatedAtDate);
+        BaseSearchRequestDtoAdapter.AddDateRange(filters, "signatureDate", req.SignatureDate);
+        BaseSearchRequestDtoAdapter.AddDateRange(filters, "createdAt", req.CreatedAtDate);
         AddPaidTriState(filters, req.Paid);
 
         return BaseSearchRequestDtoAdapter.Combine(LogicalOperator.And, filters);
-    }
-
-    private static void AddIn(List<FilterNode> filters, string field, IEnumerable<object?>? values)
-    {
-        var list = values?.ToList();
-        if (list is { Count: > 0 })
-            filters.Add(Filter.In(field, list.ToArray()));
     }
 
     // "Assignees" è multi-valore CON sentinelle speciali: gli id normali vanno in "in", le sentinelle
@@ -68,15 +61,6 @@ public static class ContractBaseFilters
         var combined = BaseSearchRequestDtoAdapter.Combine(LogicalOperator.Or, branches);
         if (combined is not null)
             filters.Add(combined);
-    }
-
-    private static void AddDateRange(List<FilterNode> filters, string field, DateOnlyRangeDto? range)
-    {
-        if (range is null) return;
-        if (range.From.HasValue)
-            filters.Add(Filter.Gte(field, range.From.Value.ToDateTime(TimeOnly.MinValue)));
-        if (range.To.HasValue)
-            filters.Add(Filter.Lte(field, range.To.Value.ToDateTime(TimeOnly.MinValue)));
     }
 
     // "Paid" tri-stato: solo pagati / solo non pagati / entrambi selezionati = nessun filtro (come il vecchio

@@ -3,34 +3,34 @@ using Search.Application.Config;
 using Search.Application.Querying;
 using Search.Application.Querying.Authorization;
 using Search.Application.Querying.Dynamic;
-using Search.Core;
 
-namespace Search.Api.Controllers;
+namespace Search.Api.Controllers.User;
 
 [ApiController]
-[Route("customers")]
-public sealed class CustomerController : ControllerBase
+[Route("users")]
+public sealed class UserController : ControllerBase
 {
     // Utente di audit fittizio finché non c'è l'autenticazione reale.
     private const string AuditUser = "api@we-byte.it";
 
     private readonly ISearchService _search;
 
-    public CustomerController(ISearchService search)
+    public UserController(ISearchService search)
     {
         _search = search;
     }
 
     [HttpPost("search")]
-    public IActionResult Search(SearchRequest request)
+    public IActionResult Search(UserSearchRequestDto request)
     {
         var caller = new SearchCaller(
             SimulatedFieldDefinitionDatabase.DemoSpace,
             new HashSet<Guid> { SearchPermissions.ViewPrice, SearchPermissions.ViewAudit });
 
-        var entityConfig = new CustomerEntityConfig();
+        var entityConfig = new UserEntityConfig();
+        var searchRequest = UserSearchRequestDtoAdapter.Adapt(request);
 
-        var result = _search.Search(entityConfig, request, caller);
+        var result = _search.Search(entityConfig, searchRequest, caller);
 
         return Ok(new { result });
     }

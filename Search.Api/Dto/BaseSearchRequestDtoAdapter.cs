@@ -133,4 +133,21 @@ public static class BaseSearchRequestDtoAdapter
 
     public static PageRequest BuildPage(OptionsDto? options) =>
         new(options?.Page ?? PageRequest.Default.Number, options?.PageSize ?? PageRequest.Default.Size);
+
+    public static void AddDateRange(List<FilterNode> filters, string field, DateOnlyRangeDto? range)
+    {
+        if (range is null) return;
+        if (range.From.HasValue)
+            filters.Add(Filter.Gte(field, range.From.Value.ToDateTime(TimeOnly.MinValue)));
+        if (range.To.HasValue)
+            filters.Add(Filter.Lte(field, range.To.Value.ToDateTime(TimeOnly.MinValue)));
+    }
+
+    public static void AddIn(List<FilterNode> filters, string field, IEnumerable<object?>? values)
+    {
+        var list = values?.ToList();
+        if (list is { Count: > 0 })
+            filters.Add(Filter.In(field, list.ToArray()));
+    }
+
 }
