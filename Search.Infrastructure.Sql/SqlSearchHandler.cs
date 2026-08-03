@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using WeByte.Search.Application.Config;
-using WeByte.Search.Application.Querying;
 using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Application.Search;
 using WeByte.Search.Core;
 using WeByte.Search.Core.Dynamic;
 using WeByte.Search.Core.Metadata;
@@ -31,16 +31,30 @@ public sealed class SqlSearchHandler(
         using var connection = connections.Create();
         connection.Open();
 
-        var countQuery = builder.BuildCount(request, spaceId);
+        // Il conteggio è responsabilità di ExecuteCount, chiamato a parte da SearchHandlerBase.SearchWithCount:
+        // qui si eseguono SOLO i dati, altrimenti si pagherebbe la stessa query di conteggio due volte.
         var query = builder.Build(request, spaceId);
 
-        logger.LogInformation("Executing SQL count query:\n{Sql}\nwith parameters:\n{Parameters}", countQuery.Sql, FormatParameters(countQuery.Parameters));
         logger.LogInformation("Executing SQL query:\n{Sql}\nwith parameters:\n{Parameters}", query.Sql, FormatParameters(query.Parameters));
 
-        var total = executor.Count(connection, countQuery);
         var items = executor.Query(connection, query);
 
-        return new SearchResult<IReadOnlyDictionary<string, object?>>(items, total, request.Page.Number, request.Page.Size);
+        return new SearchResult<IReadOnlyDictionary<string, object?>>(items);
+    }
+
+    protected override long ExecuteCount(ISearchableEntityConfig config, IEntitySearchMap map, SearchRequest request, Guid spaceId, long? upTo)
+    {
+        var builder = new SqlSearchQueryBuilder(map, schemas.GetSchema(config.SearchEntity.Name));
+        var executor = new SqlSearchExecutor();
+
+        using var connection = connections.Create();
+        connection.Open();
+
+        var countQuery = builder.BuildCount(request, spaceId, upTo);
+
+        logger.LogInformation("Executing SQL count query:\n{Sql}\nwith parameters:\n{Parameters}", countQuery.Sql, FormatParameters(countQuery.Parameters));
+
+        return executor.Count(connection, countQuery);
     }
 
     //TODO: SERVE SOLO PER I LOG

@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using WeByte.Search.Application.Config;
-using WeByte.Search.Application.Querying;
 using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Application.Search;
 using WeByte.Search.Core;
 using WeByte.Search.Core.Dynamic;
 using WeByte.Search.Core.Filters;
@@ -31,7 +31,7 @@ public sealed class MongoSearchHandler(
         var collection = collections.GetCollection(config.SearchEntity.Name);
         var scoped = ApplyTenantScope(map, request, spaceId);
 
-        // L'indice Atlas viene dalla config d'entità; per le entità OrContains resta inutilizzato (Search è già
+        // L'indice Atlas viene dalla config d'entità; per le entità OrContains resta inutilizzato (SearchWithCount è già
         // stato espanso in filtro a monte, quindi il piano non produrrà alcuno stage $search).
         var atlasIndex = config.MongoAtlasIndex;
         var executor = new MongoSearchExecutor<BsonDocument>(map, atlasIndex, config.MongoUnwindPath);
@@ -49,6 +49,16 @@ public sealed class MongoSearchHandler(
             plan.Limit);
 
         return executor.Execute(collection, plan, scoped.Page);
+    }
+
+    protected override long ExecuteCount(ISearchableEntityConfig config, IEntitySearchMap map, SearchRequest request, Guid spaceId, long? upTo)
+    {
+        var collection = collections.GetCollection(config.SearchEntity.Name);
+        var scoped = ApplyTenantScope(map, request, spaceId);
+
+        var executor = new MongoSearchExecutor<BsonDocument>(map, config.MongoAtlasIndex, config.MongoUnwindPath);
+
+        return executor.Count(collection, scoped, upTo);
     }
 
     // Scoping tenant server-side (l'equivalente Mongo del @space iniettato nel SQL): se l'entità ha un campo

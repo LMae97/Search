@@ -362,3 +362,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Search.Api/appsettings.Development.json
+
+# File di export generati in locale (in produzione vanno su blob storage): la cartella resta
+# tracciata tramite il .gitkeep, il suo contenuto no.
+/Search.Api/temp_file/*
+!/Search.Api/temp_file/.gitkeep

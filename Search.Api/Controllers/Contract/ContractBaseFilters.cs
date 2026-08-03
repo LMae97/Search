@@ -6,7 +6,7 @@ namespace WeByte.Search.Api.Controllers.Contract;
 /// <summary>
 /// Traduce i filtri tipizzati di <see cref="SearchContractRequestDto"/> in <see cref="FilterNode"/> — stesso
 /// ruolo del vecchio <c>SearchContractBaseFilters.GetBaseFilters</c>, ma verso il motore nuovo: qui il
-/// risultato è direttamente un nodo dell'albero <c>Search.Core.Filters</c>, non un <c>Filter</c>/<c>OperationType</c>
+/// risultato è direttamente un nodo dell'albero <c>SearchWithCount.Core.Filters</c>, non un <c>Filter</c>/<c>OperationType</c>
 /// da tradurre altrove.
 /// </summary>
 public static class ContractBaseFilters

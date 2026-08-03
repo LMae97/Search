@@ -14,17 +14,17 @@ namespace WeByte.Search.Api.Dto;
 /// </summary>
 public static class BaseSearchRequestDtoAdapter
 {
-    /// <summary>AND delle liste esterne, OR di ciascuna lista interna. Esposto per riuso dai filtri "extra".</summary>
+    /// <summary>OR delle liste esterne, AND di ciascuna lista interna. Esposto per riuso dai filtri "extra".</summary>
     public static FilterNode? BuildFilter(List<List<FilterDto>>? filters)
     {
         if (filters is null) return null;
 
-        var ors = filters
+        var ands = filters
             .Where(group => group is { Count: > 0 })
-            .Select(CombineOr)
+            .Select(CombineAnd)
             .ToList();
 
-        return Combine(LogicalOperator.And, ors);
+        return Combine(LogicalOperator.Or, ands);
     }
 
     /// <summary>AND di più nodi opzionali, collassando i casi 0/1 nodo (nessun wrapper superfluo).</summary>
@@ -39,10 +39,10 @@ public static class BaseSearchRequestDtoAdapter
         };
     }
 
-    private static FilterNode CombineOr(List<FilterDto> group)
+    private static FilterNode CombineAnd(List<FilterDto> group)
     {
         var nodes = group.Select(ToComparison).ToArray();
-        return nodes.Length == 1 ? nodes[0] : Filter.Or(nodes);
+        return nodes.Length == 1 ? nodes[0] : Filter.And(nodes);
     }
 
     private static FilterNode ToComparison(FilterDto f)

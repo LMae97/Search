@@ -37,10 +37,48 @@ public sealed class MongoSearchExecutor<TDocument>
         => Execute(collection, BuildPlan(request), request.Page);
 
     /// <summary>
+    /// Solo il conteggio (nessuna proiezione/paginazione eseguita): per chi ha bisogno di sapere quante
+    /// righe risulterebbero senza pagare il costo dei dati — es. una decisione "l'export è troppo grande?"
+    /// PRIMA di scriverlo. Stessa logica di conteggio usata internamente da <see cref="Execute(IMongoCollection{TDocument}, MongoQueryPlan, PageRequest)"/>,
+    /// qui isolata perché richiamabile da sola.
+    /// </summary>
+    /// <param name="upTo">
+    /// Limita quante righe il conteggio è disposto a leggere: con un filtro poco selettivo, contare tutto
+    /// può costare quanto la query dati. Il risultato è il conteggio vero se resta sotto la soglia,
+    /// altrimenti la soglia stessa — non più il totale esatto, ma basta per un confronto.
+    /// </param>
+    public long Count(IMongoCollection<TDocument> collection, SearchRequest request, long? upTo = null)
+        => Count(collection, BuildPlan(request), upTo);
+
+    /// <summary>Come <see cref="Count(IMongoCollection{TDocument}, SearchRequest, long?)"/>, su un piano già costruito.</summary>
+    public long Count(IMongoCollection<TDocument> collection, MongoQueryPlan plan, long? upTo = null)
+    {
+        // Senza $search/$unwind, CountDocuments (find puro) è più economico di un'aggregation; il driver
+        // stesso si ferma a Limit documenti invece di scandire tutta la collezione.
+        if (plan.SearchStage is null && plan.UnwindStage is null)
+            return collection.CountDocuments(plan.Filter, new CountOptions { Limit = upTo });
+
+        var pipeline = BuildPrelude(plan);
+        if (upTo is { } limit)
+            pipeline.Add(new BsonDocument("$limit", limit));
+        pipeline.Add(new BsonDocument("$count", "total"));
+
+        var countDoc = collection
+            .Aggregate<BsonDocument>(PipelineDefinition<TDocument, BsonDocument>.Create(pipeline))
+            .FirstOrDefault();
+
+        return countDoc is null ? 0 : countDoc["total"].ToInt64();
+    }
+
+    /// <summary>
     /// Esegue un piano già costruito (utile a chi vuole prima ispezionarlo/loggarlo). Sceglie il percorso in
     /// base al piano: se c'è free-text (<see cref="MongoQueryPlan.SearchStage"/>) o un unwind
     /// (<see cref="MongoQueryPlan.UnwindStage"/>) serve la <b>aggregation</b> (entrambi richiedono stage che
     /// una <c>find</c> non può esprimere); altrimenti la <c>find</c> classica, più economica.
+    /// <para>
+    /// Solo dati: nessun conteggio. Il totale è sempre <see cref="Count(IMongoCollection{TDocument}, SearchRequest, long?)"/>,
+    /// chiamato a parte — pagarlo anche qui vorrebbe dire farlo due volte per ogni ricerca.
+    /// </para>
     /// </summary>
     public SearchResult<IReadOnlyDictionary<string, object?>> Execute(
         IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
@@ -52,8 +90,6 @@ public sealed class MongoSearchExecutor<TDocument>
     private SearchResult<IReadOnlyDictionary<string, object?>> ExecuteFind(
         IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
     {
-        var total = collection.CountDocuments(plan.Filter);
-
         var find = collection.Find(plan.Filter);
         if (plan.Sort is not null)
             find = find.Sort(plan.Sort);
@@ -64,31 +100,17 @@ public sealed class MongoSearchExecutor<TDocument>
             .Project<BsonDocument>(plan.Projection)
             .ToList();
 
-        return Build(documents, plan, page, total);
+        return Build(documents, plan, page);
     }
 
     // Percorso aggregation: $search (se free-text, obbligatoriamente primo) → $unwind (se l'entità esplode una
     // collezione annidata) → $match (filtro, valutato DOPO l'unwind: sia i campi del documento padre sia quelli
     // della collezione esplosa, in un unico stage — niente split pre/post-unwind) → ordinamento → paginazione →
-    // proiezione. Il conteggio è una pipeline gemella che termina con $count (CountDocuments non vede $search/$unwind).
+    // proiezione.
     private SearchResult<IReadOnlyDictionary<string, object?>> ExecuteAggregate(
         IMongoCollection<TDocument> collection, MongoQueryPlan plan, PageRequest page)
     {
-        var prelude = new List<BsonDocument>();
-        if (plan.SearchStage is not null)
-            prelude.Add(plan.SearchStage);
-        if (plan.UnwindStage is not null)
-            prelude.Add(plan.UnwindStage);
-        if (plan.Filter.ElementCount > 0)
-            prelude.Add(new BsonDocument("$match", plan.Filter));
-
-        var countPipeline = new List<BsonDocument>(prelude) { new BsonDocument("$count", "total") };
-        var countDoc = collection
-            .Aggregate<BsonDocument>(PipelineDefinition<TDocument, BsonDocument>.Create(countPipeline))
-            .FirstOrDefault();
-        var total = countDoc is null ? 0 : countDoc["total"].ToInt64();
-
-        var dataPipeline = new List<BsonDocument>(prelude);
+        var dataPipeline = BuildPrelude(plan);
         if (plan.Sort is not null)
             dataPipeline.Add(new BsonDocument("$sort", plan.Sort)); // sort esplicito; se assente vince la rilevanza Atlas
         dataPipeline.Add(new BsonDocument("$skip", plan.Skip));
@@ -99,17 +121,32 @@ public sealed class MongoSearchExecutor<TDocument>
             .Aggregate<BsonDocument>(PipelineDefinition<TDocument, BsonDocument>.Create(dataPipeline))
             .ToList();
 
-        return Build(documents, plan, page, total);
+        return Build(documents, plan, page);
+    }
+
+    // Stage comuni a conteggio e dati nel percorso aggregation: $search → $unwind → $match. Da qui in poi
+    // divergono (il conteggio chiude con $count, i dati con sort/skip/limit/project).
+    private static List<BsonDocument> BuildPrelude(MongoQueryPlan plan)
+    {
+        var prelude = new List<BsonDocument>();
+        if (plan.SearchStage is not null)
+            prelude.Add(plan.SearchStage);
+        if (plan.UnwindStage is not null)
+            prelude.Add(plan.UnwindStage);
+        if (plan.Filter.ElementCount > 0)
+            prelude.Add(new BsonDocument("$match", plan.Filter));
+
+        return prelude;
     }
 
     private static SearchResult<IReadOnlyDictionary<string, object?>> Build(
-        List<BsonDocument> documents, MongoQueryPlan plan, PageRequest page, long total)
+        List<BsonDocument> documents, MongoQueryPlan plan, PageRequest page)
     {
         var items = documents
             .Select(doc => (IReadOnlyDictionary<string, object?>)MapRecord(doc, plan.Fields))
             .ToList();
 
-        return new SearchResult<IReadOnlyDictionary<string, object?>>(items, total, page.Number, page.Size);
+        return new SearchResult<IReadOnlyDictionary<string, object?>>(items);
     }
 
     /// <summary>Costruisce la query Mongo senza eseguirla (per ispezione/test).</summary>
@@ -182,7 +219,27 @@ public sealed class MongoSearchExecutor<TDocument>
 
         foreach (var name in names)
         {
-            var path = PathOf(name);
+            if (!_map.TryGetField(name, out var field))
+                throw new InvalidOperationException($"Campo '{name}' non mappato.");
+
+            var path = field.StoragePath
+                ?? throw new InvalidOperationException($"Il campo '{name}' non ha uno StoragePath (richiesto per Mongo).");
+
+            if (field.SecondaryStoragePath is not null)
+            {
+                // Proiezione composta { value, <SecondaryResponseKey> }: stesso principio del
+                // json_build_object lato SQL — un solo campo pubblico che combina due path del documento.
+                // L'alias diventa il "path" da rileggere in MapRecord: non punta più dentro il documento
+                // originale, ma alla sotto-struttura appena costruita da questo stage.
+                document[name] = new BsonDocument
+                {
+                    { "value", "$" + path },
+                    { field.SecondaryResponseKey!, "$" + field.SecondaryStoragePath }
+                };
+                fields.Add((name, name));
+                continue;
+            }
+
             document[path] = 1;
             fields.Add((name, path));
         }
@@ -258,6 +315,11 @@ public sealed class MongoSearchExecutor<TDocument>
             BsonType.Boolean => value.AsBoolean,
             BsonType.DateTime => value.ToUniversalTime(),
             BsonType.Array => value.AsBsonArray.Select(ToClr).ToList(),
+            // Proiezione composta (vedi BuildProjection, campi con SecondaryStoragePath): un vero oggetto
+            // annidato, non un valore scalare — va reso come Dictionary, non lasciato come BsonDocument
+            // (che il serializzatore JSON a valle non saprebbe scrivere correttamente, com'era già emerso
+            // per l'equivalente SQL/json_build_object).
+            BsonType.Document => value.AsBsonDocument.Elements.ToDictionary(e => e.Name, e => ToClr(e.Value)),
             _ => BsonTypeMapper.MapToDotNetValue(value)
         };
     }

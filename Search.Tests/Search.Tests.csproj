@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>WeByte.Search.Tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -24,6 +24,8 @@
     <ProjectReference Include="..\Search.Infrastructure.Sql\Search.Infrastructure.Sql.csproj" />
     <ProjectReference Include="..\Search.Infrastructure.Mongo\Search.Infrastructure.Mongo.csproj" />
     <ProjectReference Include="..\Search.Linq\Search.Linq.csproj" />
+    <ProjectReference Include="..\Search.Export\Search.Export.csproj" />
+    <ProjectReference Include="..\Search.Export.Xlsx\Search.Export.Xlsx.csproj" />
   </ItemGroup>
 
 </Project>

@@ -16,7 +16,7 @@ public class OptionsDto
     public int? Page { get; set; } = null;
     public int? PageSize { get; set; } = null;
 
-    /// <summary>AND di OR: la lista esterna è in AND, ogni lista interna è in OR.</summary>
+    /// <summary>OR di AND: la lista esterna è in OR, ogni lista interna è in AND.</summary>
     public List<List<FilterDto>>? Filters { get; set; } = null;
     public List<string>? Columns { get; set; } = null;
     public List<SortingDto>? SortBy { get; set; } = null;

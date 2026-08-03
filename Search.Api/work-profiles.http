@@ -1,20 +1,101 @@
 @baseUrl = http://localhost:5080
 @contentType = application/json
 
-### Ricerca: price >= 10 AND tags ⊇ {sale|novità}, ordinati per prezzo desc
+# Gli endpoint /export NON restituiscono il file: scrivono in Search.Api/temp_file e rispondono con
+# { fileName, location, sizeInBytes } — come il legacy, che tornava una URI. Per ispezionare un xlsx:
+#   dotnet run --project <scratchpad>/XlsxDump -- "<location>" 3
+
+### Ricerca: proiezione + ordinamento + pagina espliciti (tutto dentro "options")
 POST {{baseUrl}}/work-profiles/search
 Content-Type: {{contentType}}
 
 {
-  "search": "aur",
-  "filter": {
-    "and": [
-      { "field": "spaceId", "op": "eq", "value": "4ae7781f-28a9-4070-b545-dfeb854c8764" }
-    ]
-  },
-  "projection": ["id", "name", "userNames", "userIds", "spaceId", "brandName"],
-  "sort": [
-    { "field": "brandName", "direction": "Ascending" }
-  ],
-  "page": { "number": 1, "size": 10 }
+  "options": {
+    "columns": ["id", "name", "brandName"],
+    "sortBy": [
+      { "field": "brandName", "direction": "asc" }
+    ],
+    "page": 1,
+    "pageSize": 10
+  }
 }
+
+### Ricerca: free-text su name/brandName (WorkProfileBaseFilters lo traduce in un OR di contains)
+POST {{baseUrl}}/work-profiles/search
+Content-Type: {{contentType}}
+
+{
+  "search": "ace",
+  "options": {
+    "columns": ["id", "name", "brandName"],
+    "pageSize": 5
+  }
+}
+
+### Export CSV: stessa richiesta della prima. Il campo Link "brandName" esce come etichetta.
+### Nota: "id" è richiesto in proiezione ma NON compare nel file, perché è IsHidden (come nel legacy).
+POST {{baseUrl}}/work-profiles/export
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": ["id", "name", "brandName"],
+    "sortBy": [
+      { "field": "brandName", "direction": "asc" }
+    ],
+    "page": 1,
+    "pageSize": 10
+  }
+}
+
+### Export CSV: colonne con date e testo, per vedere la formattazione delle celle
+POST {{baseUrl}}/work-profiles/export
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": ["name", "brandName", "isActive", "contactEmail", "createdAt", "createdBy"],
+    "sortBy": [
+      { "field": "name", "direction": "asc" }
+    ],
+    "pageSize": 5
+  }
+}
+
+### Export CSV: proiezione di default (options assente) → [name, Segmento], perché id/brandId sono IsHidden
+POST {{baseUrl}}/work-profiles/export
+Content-Type: {{contentType}}
+
+{}
+
+### Export XLSX: stessi dati, celle tipizzate (isActive booleano, createdAt data, non testo).
+### La risposta è JSON con il percorso del file scritto in Search.Api/temp_file.
+POST {{baseUrl}}/work-profiles/export?format=xlsx
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": ["name", "brandName", "isActive", "contactEmail", "createdAt", "createdBy"],
+    "sortBy": [
+      { "field": "name", "direction": "asc" }
+    ],
+    "pageSize": 20
+  }
+}
+
+### Export XLSX: formato data all'italiana
+POST {{baseUrl}}/work-profiles/export?format=xlsx
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": ["name", "createdAt"],
+    "pageSize": 200
+  }
+}
+
+### Formato inesistente → 400 con l'elenco di quelli disponibili
+POST {{baseUrl}}/work-profiles/export?format=xlsx
+Content-Type: {{contentType}}
+
+{}

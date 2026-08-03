@@ -21,22 +21,39 @@ POST {{baseUrl}}/customers/search
 Content-Type: {{contentType}}
 
 {
-  "filter": {
-    "and": [
-      { "field": "spaceId", "op": "eq", "value": "4ae7781f-28a9-4070-b545-dfeb854c8764" },
-      { "field": "tagNames", "op": "containsAny", "values": ["PROVA", "hhhhh", "lllllllllllllllllllllll"] }
-    ]
-  },
-  "projection": [
-    "id", "businessType", "legalDoor", "phone", "businessCode", "email", "businessName", "legalStairs",
-    "vatNumber", "sector", "legalCountry", "legalFloor", "legalStreet", "legalStreetNumber", "birthProvince", "lastName", 
-    "website", "legalState", "legalCity", "birthPlace", "birthCountry", "legalZip", "sdiCode", "businessFiscalCode", 
-    "businessActivity", "fax", "pec", "firstName", "sex", "type",  "fiscalCode", "externalId", "landline", 
-    "mobile", "createdById", "createdByName", "updatedById", "updatedByName", "tagIds", "tagNames" 
-  ],
-  "sort": [
-    { "field": "lastName", "direction": "Ascending" },
-    { "field": "id", "direction": "Ascending" }
-  ],
-  "page": { "number": 1, "size": 2 }
+    "options": {
+      "columns": [
+        "email",
+        "tagNames" 
+      ]
+    }
+}
+
+### Export CSV: proiezione di default (options assente)
+POST {{baseUrl}}/customers/export
+Content-Type: {{contentType}}
+
+{
+    "options": {
+      "columns": [
+        "email",
+        "tagNames"
+      ]
+    }
+}
+
+### Export XLSX: stessa richiesta, ma con celle tipizzate (?format=xlsx).
+### La risposta è JSON con {fileName, location, sizeInBytes}: il file viene scritto in Search.Api/temp_file,
+### non restituito nel corpo della risposta (vedi IExportStore).
+POST {{baseUrl}}/customers/export?format=xlsx
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": ["firstName", "lastName", "email", "landline"],
+    "sortBy": [
+      { "field": "lastName", "direction": "asc" }
+    ],
+    "pageSize": null
+  }
 }

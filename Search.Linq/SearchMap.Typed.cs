@@ -75,10 +75,16 @@ public sealed class TypedSearchMapBuilder<T>
         var descriptors = _fields.Select(field => FieldDescriptor.BuildSelectorBased(
             selector: field.Selector,
             name: field.Name,
+            // Mappa code-first: nessuna definizione a DB da cui prendere un id di risposta distinto,
+            // quindi la chiave esposta coincide col nome pubblico del campo.
+            responseId: field.Name,
             kind: field.Kind,
             isArray: field.IsArray,
             clrType: field.ClrType,
             jsonColumn: false,
+            // Il builder fluente non espone (ancora) i campi Link: nessun riferimento da proiettare.
+            linkReferencePath: null,
+            linkReferenceEntityId: null,
             label: field.Label,
             section: null,
             defaultOrder: null,

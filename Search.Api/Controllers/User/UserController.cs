@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using WeByte.Search.Application.Config;
-using WeByte.Search.Application.Querying;
 using WeByte.Search.Application.Querying.Authorization;
 using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Application.Search;
 
 namespace WeByte.Search.Api.Controllers.User;
 
@@ -30,7 +30,7 @@ public sealed class UserController : ControllerBase
         var entityConfig = new UserEntityConfig();
         var searchRequest = UserSearchRequestDtoAdapter.Adapt(request);
 
-        var result = _search.Search(entityConfig, searchRequest, caller);
+        var result = _search.SearchWithCount(entityConfig, searchRequest, caller);
 
         return Ok(new { result });
     }

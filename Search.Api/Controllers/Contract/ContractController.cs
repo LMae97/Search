@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using WeByte.Search.Application.Config;
-using WeByte.Search.Application.Querying;
 using WeByte.Search.Application.Querying.Authorization;
 using WeByte.Search.Application.Querying.Dynamic;
+using WeByte.Search.Application.Search;
 
 namespace WeByte.Search.Api.Controllers.Contract;
 
@@ -28,7 +28,7 @@ public sealed class ContractController : ControllerBase
         var currentUserId = Guid.Empty;
 
         var searchRequest = ContractRequestAdapter.Adapt(request, currentUserId);
-        var result = _search.Search(new ContractEntityConfig(), searchRequest, caller);
+        var result = _search.SearchWithCount(new ContractEntityConfig(), searchRequest, caller);
 
         return Ok(new { result });
     }

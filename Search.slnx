@@ -1,11 +1,27 @@
 <Solution>
   <Project Path="Search.Api/Search.Api.csproj" />
   <Project Path="Search.Application/Search.Application.csproj" />
-  <Project Path="Search.Core/Search.Core.csproj" />
+  <Project Path="Search.Core/Search.Core.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Search.Export/Search.Export.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Search.Export.Xlsx/Search.Export.Xlsx.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
   <Project Path="Search.Infrastructure.Mongo/Search.Infrastructure.Mongo.csproj" />
   <Project Path="Search.Infrastructure.Sql/Search.Infrastructure.Sql.csproj" />
-  <Project Path="Search.Linq/Search.Linq.csproj" />
-  <Project Path="Search.Mongo/Search.Mongo.csproj" />
-  <Project Path="Search.Sql/Search.Sql.csproj" />
-  <Project Path="Search.Tests/Search.Tests.csproj" />
+  <Project Path="Search.Linq/Search.Linq.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Search.Mongo/Search.Mongo.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Search.Sql/Search.Sql.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Search.Tests/Search.Tests.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
 </Solution>

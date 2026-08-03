@@ -20,13 +20,11 @@ public sealed class SearchRequestSanitizer
 
     public SearchRequest Sanitize(SearchRequest request)
     {
-        var projection = request.Projection.Where(IsKnown).ToList();
-
         return new SearchRequest
         {
             FullTextSearch = request.FullTextSearch, // free-text: nessun campo da potare, si porta avanti così com'è
             Filter = Prune(request.Filter),
-            Projection = projection,
+            Projection = request.Projection.Where(IsKnown).ToList(),
             Sort = request.Sort.Where(sort => IsKnown(sort.Field)).ToList(),
             Page = request.Page
         };

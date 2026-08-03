@@ -30,9 +30,13 @@ internal static class TestSupport
     public static SearchFieldDefinition Def(
         string entity, string name, FieldKind kind, string path,
         bool isArray = false, bool json = false, int? defaultOrder = null, Guid? permission = null,
-        bool searchable = false)
-        => new(entity, name, kind, json, isArray, path,
-            DefaultOrder: defaultOrder, RequiredPermissionId: permission, IsSearchable: searchable);
+        bool searchable = false, bool isHidden = false,
+        string? secondaryPath = null, string? secondaryKey = null, string? customType = null)
+        // ResponseId = name: nei test la chiave esposta coincide col nome pubblico del campo (non c'è una
+        // riga a DB che ne imponga uno diverso), com'è per le mappe code-first.
+        => new(entity, name, kind, json, isArray, path, name,
+            DefaultOrder: defaultOrder, RequiredPermissionId: permission, IsSearchable: searchable, IsHidden: isHidden,
+            SecondaryStoragePath: secondaryPath, SecondaryResponseKey: secondaryKey, CustomType: customType);
 }
 
 /// <summary>Entità CLR di prova per il path selector-based (store EF / esecuzione LINQ in-memory).</summary>

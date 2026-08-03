@@ -12,11 +12,15 @@ public sealed class SqlSearchQueryBuilderTests
     private const string E = "customer";
 
     private static IEntitySearchMap BuildMap() => Map(
-        SearchEntity.RelationalRaw(E), 
+        SearchEntity.RelationalRaw(E),
         Caller(),
         Def(E, "id", FieldKind.Guid, "\"c\".\"Id\""),
         Def(E, "name", FieldKind.String, "\"c\".\"Name\""),
-        Def(E, "createdByName", FieldKind.String, "\"u\".\"Username\""));
+        Def(E, "createdByName", FieldKind.String, "\"u\".\"Username\""),
+        // Un pulsante "custom" che porta un dato di corredo insieme al valore principale (es. il vecchio
+        // "scarica tutti gli allegati", che tornava anche se il contratto fosse già stampato).
+        Def(E, "btnDownloadAll", FieldKind.Custom, "\"c\".\"Id\"",
+            secondaryPath: "\"c\".\"IsPrinted\"", secondaryKey: "isPrinted"));
 
     // Schema con un join scalare (createdByName) e un base-predicate che referenzia @space (scoping tenant).
     private static SqlEntitySchema Schema() => new(
@@ -105,5 +109,37 @@ public sealed class SqlSearchQueryBuilderTests
         Assert.Contains("SELECT COUNT(*)", plan.Sql);
         Assert.DoesNotContain("LIMIT", plan.Sql);
         Assert.DoesNotContain("AS \"name\"", plan.Sql);
+    }
+
+    [Fact]
+    public void Capped_count_wraps_a_limited_subquery()
+    {
+        var plan = Builder().BuildCount(new SearchRequest(), SpaceId, upTo: 260);
+
+        // COUNT(*) su una subquery già LIMIT-ata: Postgres si ferma dopo 260 righe candidate, non scandisce
+        // tutta la tabella per poi scartare l'eccedenza.
+        Assert.Contains("SELECT COUNT(*) FROM (", plan.Sql);
+        Assert.Contains("LIMIT @countLimit", plan.Sql);
+        Assert.Equal(260L, plan.Parameters["@countLimit"]);
+    }
+
+    [Fact]
+    public void Without_a_cap_the_count_has_no_limit_at_all()
+    {
+        var plan = Builder().BuildCount(new SearchRequest(), SpaceId);
+
+        Assert.DoesNotContain("LIMIT", plan.Sql);
+        Assert.False(plan.Parameters.ContainsKey("@countLimit"));
+    }
+
+    [Fact]
+    public void A_field_with_a_secondary_path_projects_a_composite_object()
+    {
+        var plan = Builder().Build(new SearchRequest { Projection = ["btnDownloadAll"] }, SpaceId);
+
+        // Stessa forma del composto {value,label} di Link, ma con la chiave arbitraria "isPrinted".
+        Assert.Contains(
+            "json_build_object('value', \"c\".\"Id\", 'isPrinted', \"c\".\"IsPrinted\") AS \"btnDownloadAll\"",
+            plan.Sql);
     }
 }

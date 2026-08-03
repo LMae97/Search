@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>WeByte.Search.Export.Xlsx</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pacchetto a sé proprio per questa dipendenza: chi esporta solo in CSV non se la porta dietro.
+         Versione allineata a quella del vecchio export, per parità di comportamento. -->
+    <PackageReference Include="ClosedXML" Version="0.102.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Search.Export\Search.Export.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -89,4 +89,28 @@ public sealed class SearchRequestValidatorTests
         var ex = Invalid(new SearchRequest { Page = new PageRequest(number, size) });
         Assert.NotEmpty(ex.Errors);
     }
+
+    private static SearchRequestValidator ValidatorWithMaxPageSize(int maxPageSize) => new(Map(
+        SearchEntity.RelationalRaw(E),
+        Caller(),
+        Def(E, "id", FieldKind.Guid, "\"c\".\"Id\"")),
+        maxPageSize);
+
+    [Fact]
+    public void Max_page_size_is_configurable_for_internal_batch_callers()
+    {
+        // 200 è il tetto giusto per una griglia UI, non per un batch d'export: senza un tetto configurabile,
+        // il primo batch dell'export (spesso migliaia di righe) verrebbe rifiutato da questa stessa regola.
+        var ex = Record.Exception(() =>
+            ValidatorWithMaxPageSize(5000).Validate(new SearchRequest { Page = new PageRequest(1, 5000) }));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void Default_max_page_size_still_rejects_5000()
+    {
+        var ex = Invalid(new SearchRequest { Page = new PageRequest(1, 5000) });
+        Assert.Contains(ex.Errors, e => e.Contains("200"));
+    }
 }

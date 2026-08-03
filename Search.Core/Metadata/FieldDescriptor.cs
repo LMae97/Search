@@ -35,6 +35,8 @@ public sealed class FieldDescriptor
     /// </summary>
     public string? StoragePath { get; init; }
 
+    public string ResponseId { get; }
+
     public IReadOnlySet<FilterOperator> AllowedOperators { get; }
 
     // --- Metadati di presentazione / autorizzazione (decorano il campo tecnico) ---
@@ -57,6 +59,32 @@ public sealed class FieldDescriptor
     /// </summary>
     public Guid? RequiredPermissionId { get; }
 
+    public string? LinkReferencePath { get; }
+    public string? LinkReferenceEntityId { get; }
+
+    /// <summary>
+    /// Path di un secondo valore da comporre insieme a <see cref="StoragePath"/> in un'unica proiezione
+    /// <c>{ value, &lt;SecondaryResponseKey&gt; }</c> — stesso principio del composto <c>{value,label}</c>
+    /// di <see cref="FieldKind.Link"/>, ma con una chiave arbitraria invece di "label". Serve ai campi
+    /// <see cref="FieldKind.Custom"/> che portano un dato di corredo insieme al valore principale (es. il
+    /// vecchio pulsante "scarica tutti gli allegati", che tornava anche se il contratto fosse già stampato).
+    /// Null = proiezione singola, il caso comune.
+    /// </summary>
+    public string? SecondaryStoragePath { get; init; }
+
+    /// <summary>Nome della chiave del valore secondario nell'oggetto proiettato (es. "isPrinted").</summary>
+    public string? SecondaryResponseKey { get; init; }
+
+    /// <summary>
+    /// Identificatore del widget specifico per un campo <see cref="FieldKind.Custom"/> (es.
+    /// "BtnImpersonateUser", "BtnDuplicateProduct", "Image") — quello che il FE legge in
+    /// <c>HeaderDto.Type</c> per scegliere quale componente renderizzare. Non è un <see cref="FieldKind"/>
+    /// a sé (il motore tratta tutti i Custom allo stesso modo: zero operatori, mai esportabili — vedi
+    /// <see cref="FieldKind.Custom"/>), è solo l'etichetta che il vecchio sistema portava con un Guid per
+    /// tipo di pulsante. Null per ogni campo non-Custom.
+    /// </summary>
+    public string? CustomType { get; init; }
+
     /// <summary>
     /// Se il campo partecipa alla ricerca full-text libera (<c>SearchRequest.Search</c>). È metadato
     /// store-agnostic: ogni store decide come usarlo (Mongo → path di un <c>$search</c> Atlas; SQL → colonna
@@ -66,10 +94,13 @@ public sealed class FieldDescriptor
 
     private FieldDescriptor(
         string name,
+        string responseId,
         FieldKind kind,
         bool isArray,
         Type clrType,
         bool jsonColumn,
+        string? linkReferencePath,
+        string? linkReferenceEntityId,
         string? label,
         string? section,
         int? defaultOrder,
@@ -78,10 +109,13 @@ public sealed class FieldDescriptor
         IReadOnlySet<FilterOperator> allowedOperators)
     {
         Name = name;
+        ResponseId = responseId;
         Kind = kind;
         IsArray = isArray;
         ClrType = clrType;
         JsonColumn = jsonColumn;
+        LinkReferencePath = linkReferencePath;
+        LinkReferenceEntityId = linkReferenceEntityId;
         Label = label ?? name;
         Section = section;
         DefaultOrder = defaultOrder;
@@ -93,33 +127,46 @@ public sealed class FieldDescriptor
     public static FieldDescriptor BuildPathBased(
         string storagePath,
         string name,
+        string responseId,
         FieldKind kind,
         bool isArray,
         Type clrType,
         bool jsonColumn,
+        string? linkReferencePath,
+        string? linkReferenceEntityId,
         string? label,
         string? section,
         int? defaultOrder,
         bool isHidden,
         Guid? requiredPermissionId,
         IReadOnlySet<FilterOperator> allowedOperators,
-        bool isSearchable = false)
+        bool isSearchable = false,
+        string? secondaryStoragePath = null,
+        string? secondaryResponseKey = null,
+        string? customType = null)
     {
-        return new FieldDescriptor(name, kind, isArray, clrType, jsonColumn, label, section,
+        return new FieldDescriptor(name, responseId, kind, isArray, clrType, jsonColumn,
+            linkReferencePath, linkReferenceEntityId, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
             StoragePath = storagePath,
-            IsSearchable = isSearchable
+            IsSearchable = isSearchable,
+            SecondaryStoragePath = secondaryStoragePath,
+            SecondaryResponseKey = secondaryResponseKey,
+            CustomType = customType
         };
     }
 
     public static FieldDescriptor BuildSelectorBased(
         LambdaExpression selector,
         string name,
+        string responseId,
         FieldKind kind,
         bool isArray,
         Type clrType,
         bool jsonColumn,
+        string? linkReferencePath,
+        string? linkReferenceEntityId,
         string? label,
         string? section,
         int? defaultOrder,
@@ -128,7 +175,8 @@ public sealed class FieldDescriptor
         IReadOnlySet<FilterOperator> allowedOperators,
         bool isSearchable = false)
     {
-        return new FieldDescriptor(name, kind, isArray, clrType, jsonColumn, label, section,
+        return new FieldDescriptor(name, responseId, kind, isArray, clrType, jsonColumn,
+            linkReferencePath, linkReferenceEntityId, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
             Selector = selector,

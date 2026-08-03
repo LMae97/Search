@@ -1,14 +1,18 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using WeByte.Search.Application.Querying;
+using WeByte.Search.Api.Export;
+using WeByte.Search.Application.Export;
+using WeByte.Search.Export;
+using WeByte.Search.Export.Xlsx;
 using WeByte.Search.Application.Querying.Dynamic;
-using WeByte.Search.Core.Dynamic;
-using WeByte.Search.Core.Validation;
 using WeByte.Search.Api.Serialization;
 using WeByte.Search.Infrastructure.Sql;
 using WeByte.Search.Infrastructure.Mongo;
 using WeByte.Search.Sql;
+using WeByte.Search.Core.Dynamic;
 using MongoDB.Driver;
+using WeByte.Search.Core.Validation;
+using WeByte.Search.Application.Search;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +60,28 @@ if (!string.IsNullOrWhiteSpace(mongoConnectionString))
 }
 
 builder.Services.AddSingleton<ISearchService, SearchService>();
+
+// Export: il servizio è indipendente dal formato; i formati sono le fabbriche registrate qui sotto.
+// Questo è l'unico punto che conosce sia SearchWithCount.Export sia SearchWithCount.Export.Xlsx.
+builder.Services.AddSingleton<SearchExporter>();
+
+// Preset italiano (07/12/2024 12:29): dd/MM/yyyy, culture it-IT. Vedi ExportValueFormat.Italian per il
+// perché delle due sintassi separate (stringa .NET per il CSV, number format Excel per l'xlsx).
+builder.Services.AddSingleton<ITabularWriterFactory>(_ =>
+    new CsvTabularWriterFactory(new CsvExportOptions { Values = ExportValueFormat.Italian }));
+
+builder.Services.AddSingleton<ITabularWriterFactory>(_ =>
+    new XlsxTabularWriterFactory(XlsxExportOptions.Italian));
+
+builder.Services.AddSingleton<ExportFormats>();
+
+// Destinazione dei file prodotti. In locale una cartella del progetto; in produzione al suo posto va uno
+// store su blob con SAS a scadenza (il "temporary-file-export" del vecchio sistema), stessa interfaccia.
+// Il percorso è ancorato alla ContentRoot, così non dipende dalla directory da cui si lancia il processo.
+var exportDirectory = builder.Configuration.GetValue<string>("Export:Directory")
+    ?? Path.Combine(builder.Environment.ContentRootPath, "temp_file");
+
+builder.Services.AddSingleton<IExportStore>(_ => new LocalDirectoryExportStore(exportDirectory));
 
 var app = builder.Build();
 

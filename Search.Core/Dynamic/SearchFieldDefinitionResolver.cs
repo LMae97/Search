@@ -47,10 +47,13 @@ public sealed class SearchFieldDefinitionResolver
         return FieldDescriptor.BuildSelectorBased(
             selector: selector,
             name: definition.Name,
+            responseId: definition.ResponseId,
             kind: kind,
             isArray: definition.IsArray,
             clrType: underlying,
             jsonColumn: definition.JsonColumn,
+            linkReferenceEntityId: definition.LinkReferenceEntityId,
+            linkReferencePath: definition.LinkReferencePath,
             label: definition.Label,
             section: definition.Section,
             defaultOrder: definition.DefaultOrder,
@@ -70,17 +73,23 @@ public sealed class SearchFieldDefinitionResolver
         return FieldDescriptor.BuildPathBased(
             storagePath: definition.Path,
             name: definition.Name,
+            responseId: definition.ResponseId,
             kind: definition.Kind,
             isArray: definition.IsArray,
             clrType: clrType,
             jsonColumn: definition.JsonColumn,
+            linkReferenceEntityId: definition.LinkReferenceEntityId,
+            linkReferencePath: definition.LinkReferencePath,
             label: definition.Label ?? definition.Name,
             section: definition.Section,
             defaultOrder: definition.DefaultOrder,
             isHidden: definition.IsHidden,
             requiredPermissionId: definition.RequiredPermissionId,
             allowedOperators: OperatorRules.DefaultFor(definition.Kind, definition.IsArray),
-            isSearchable: definition.IsSearchable
+            isSearchable: definition.IsSearchable,
+            secondaryStoragePath: definition.SecondaryStoragePath,
+            secondaryResponseKey: definition.SecondaryResponseKey,
+            customType: definition.CustomType
         );
     }
 
@@ -94,6 +103,7 @@ public sealed class SearchFieldDefinitionResolver
         FieldKind.Guid => typeof(Guid),
         FieldKind.Enum => typeof(string), // "enum" documentale senza tipo CLR: trattato come stringa
         FieldKind.ObjectId => typeof(string), // hex a 24 char: coerciato come stringa, poi BsonObjectId nel translator
+        FieldKind.Custom => typeof(string), // mai coerciato per davvero: zero operatori in OperatorRules
         _ => typeof(string)
     };
 }

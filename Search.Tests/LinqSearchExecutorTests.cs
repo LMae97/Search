@@ -67,7 +67,7 @@ public sealed class LinqSearchExecutorTests
             Projection = ["name", "price"]
         });
 
-        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Items.Count);
         Assert.All(result.Items, row => Assert.Equal(new[] { "name", "price" }, row.Keys.OrderBy(k => k)));
         Assert.Equal(new[] { "Beta", "Gamma" }, result.Items.Select(r => r["name"]).OrderBy(n => (string)n!));
         Assert.Equal(new[] { 20m, 30m }, result.Items.Select(r => (decimal)r["price"]!).OrderBy(p => (decimal)p!));
@@ -95,7 +95,7 @@ public sealed class LinqSearchExecutorTests
             Projection = ["name"] 
         });
 
-        Assert.Equal(2, result.TotalCount); // 10 e 20 inclusi, 30 escluso
+        Assert.Equal(2, result.Items.Count); // 10 e 20 inclusi, 30 escluso
     }
 
     [Fact]
@@ -148,8 +148,10 @@ public sealed class LinqSearchExecutorTests
     }
 
     [Fact]
-    public void Pagination_returns_page_slice_and_full_total()
+    public void Pagination_returns_only_the_requested_page_slice()
     {
+        // Il conteggio del totale non è più responsabilità dell'executor (vedi SearchHandlerBase.Count,
+        // eseguito a parte): qui si verifica solo che la pagina richiesta restituisca la fetta giusta.
         var result = Run(new SearchRequest
         {
             Sort = [new SortField("price", SortDirection.Ascending)],
@@ -157,7 +159,6 @@ public sealed class LinqSearchExecutorTests
             Page = new PageRequest(2, 1) // seconda pagina, 1 per pagina
         });
 
-        Assert.Equal(3, result.TotalCount);      // il totale ignora la paginazione
         var only = Assert.Single(result.Items);
         Assert.Equal("Beta", only["name"]);      // 2° elemento per prezzo crescente
     }

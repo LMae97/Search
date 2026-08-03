@@ -6,11 +6,39 @@ POST {{baseUrl}}/users/search
 Content-Type: {{contentType}}
 
 {
-  "projection": [
-    "username", "roles"
-  ],
-  "sort": [
-    { "field": "username", "direction": "Ascending" }
-  ],
-  "page": { "number": 1, "size": 70 }
+  "options": {
+    "columns": [
+      "btnImpersonateUser",
+      "email",
+      "tagNames"
+    ]
+  }
+}
+
+### Export CSV: proiezione di default (options assente)
+POST {{baseUrl}}/customers/export
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": [
+      "btnImpersonateUser",
+      "email",
+      "tagNames"
+    ]
+  }
+}
+
+### Export XLSX: stessa richiesta, ma con celle tipizzate (?format=xlsx)
+POST {{baseUrl}}/customers/export?format=xlsx
+Content-Type: {{contentType}}
+
+{
+  "options": {
+    "columns": [
+      "btnImpersonateUser",
+      "email",
+      "tagNames"
+    ]
+  }
 }

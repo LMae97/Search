@@ -79,7 +79,7 @@ public sealed class TypedSearchMapBuilderTests
             new SearchRequest { Filter = Filter.Gte("price", 20), Projection = ["name", "price"] },
             ProductMap());
 
-        Assert.Equal(2, result.TotalCount); // Beta, Gamma
+        Assert.Equal(2, result.Items.Count); // Beta, Gamma
         Assert.All(result.Items, row => Assert.True(row.ContainsKey("name") && row.ContainsKey("price")));
     }
 
@@ -88,7 +88,7 @@ public sealed class TypedSearchMapBuilderTests
     public void Free_text_or_contains_matches_any_searchable_field()
     {
         // "al" compare in Name="Alpha" (via name) e in Description="alfa incluso" (via description) → OR sui due campi.
-        var result = Data.Search(new SearchRequest { Search = "al", Projection = ["name"] }, ProductMap());
+        var result = Data.SearchWithCount(new SearchRequest { SearchWithCount = "al", Projection = ["name"] }, ProductMap());
 
         var names = result.Items.Select(r => (string)r["name"]!).OrderBy(n => n).ToList();
         Assert.Equal(["Alpha", "Gamma"], names);

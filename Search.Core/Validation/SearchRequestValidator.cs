@@ -10,8 +10,19 @@ namespace WeByte.Search.Core.Validation;
 public sealed class SearchRequestValidator
 {
     private readonly IEntitySearchMap _map;
+    private readonly int _maxPageSize;
 
-    public SearchRequestValidator(IEntitySearchMap map) => _map = map;
+    /// <param name="maxPageSize">
+    /// Tetto di <see cref="PageRequest.Size"/>, pensato per una griglia UI (200 di default: nessuna
+    /// interfaccia ha senso a chiedere di più in una pagina sola). Un batch interno — es. l'export, che
+    /// pagina a migliaia di righe per volta — deve passare un tetto più alto, coerente con la propria
+    /// dimensione di batch: non è la stessa nozione di "pagina" di una richiesta utente.
+    /// </param>
+    public SearchRequestValidator(IEntitySearchMap map, int maxPageSize = 200)
+    {
+        _map = map;
+        _maxPageSize = maxPageSize;
+    }
 
     /// <summary>Lancia <see cref="SearchValidationException"/> se la richiesta non è valida.</summary>
     public void Validate(SearchRequest request)
@@ -35,8 +46,8 @@ public sealed class SearchRequestValidator
 
         if (request.Page.Number < 1)
             errors.Add("Paginazione: il numero di pagina deve essere >= 1.");
-        if (request.Page.Size is < 1 or > 200)
-            errors.Add("Paginazione: la dimensione pagina deve essere tra 1 e 200.");
+        if (request.Page.Size < 1 || request.Page.Size > _maxPageSize)
+            errors.Add($"Paginazione: la dimensione pagina deve essere tra 1 e {_maxPageSize}.");
 
         if (errors.Count > 0)
             throw new SearchValidationException(errors);

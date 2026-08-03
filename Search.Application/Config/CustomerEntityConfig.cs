@@ -16,7 +16,8 @@ public class CustomerEntityConfig : ISearchableEntityConfig
     ];
 
     public IReadOnlyList<SortField> DefaultSort => [
-        new SortField("name", SortDirection.Ascending) ,
+        new SortField("lastName", SortDirection.Ascending),
+        new SortField("firstName", SortDirection.Ascending),
         new SortField("id", SortDirection.Ascending)
     ];
 

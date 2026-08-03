@@ -54,14 +54,35 @@ public sealed class SqlSearchQueryBuilder
         return new SqlQueryPlan(sql, parameters);
     }
 
-    /// <summary>Query di conteggio totale (stesso WHERE, senza proiezione/ordinamento/paginazione).</summary>
-    public SqlQueryPlan BuildCount(SearchRequest request, Guid spaceId)
+    /// <summary>
+    /// Query di conteggio totale (stesso WHERE, senza proiezione/ordinamento/paginazione).
+    /// <para>
+    /// <paramref name="upTo"/> limita quante righe il conteggio è disposto a leggere: con un filtro poco
+    /// selettivo su una tabella enorme, un <c>COUNT(*)</c> senza limite può costare quanto (o più di) la
+    /// query dati stessa — sprecato quando serve solo sapere "sono di più di N?". Con un limite, il
+    /// risultato è il conteggio vero se resta sotto <paramref name="upTo"/>, altrimenti <paramref name="upTo"/>
+    /// stesso: non più il totale esatto, ma sufficiente per un confronto di soglia.
+    /// </para>
+    /// </summary>
+    public SqlQueryPlan BuildCount(SearchRequest request, Guid spaceId, long? upTo = null)
     {
         var parameters = new Dictionary<string, object?>();
         var where = BuildWhere(request.Filter, parameters);
         // Il COUNT non proietta né ordina: servono solo i join richiesti dai campi del filtro.
         var from = BuildFrom(FilterFields(request.Filter));
-        var sql = $"SELECT COUNT(*)\n{from}\n{where}".TrimEnd();
+
+        string sql;
+        if (upTo is { } limit)
+        {
+            parameters["@countLimit"] = limit;
+            // COUNT(*) su una subquery già limitata: Postgres si ferma dopo @countLimit righe candidate,
+            // non scandisce l'intera tabella per poi scartare l'eccedenza.
+            sql = $"SELECT COUNT(*) FROM (\nSELECT 1\n{from}\n{where}LIMIT @countLimit\n) AS capped";
+        }
+        else
+        {
+            sql = $"SELECT COUNT(*)\n{from}\n{where}".TrimEnd();
+        }
 
         BindSpace(sql, parameters, spaceId);
 
@@ -109,6 +130,17 @@ public sealed class SqlSearchQueryBuilder
     {
         if (!_map.TryGetField(name, out var field))
             throw new InvalidOperationException($"Proiezione su campo non mappato '{name}'.");
+
+        // Campo Link: non è la colonna grezza ma un oggetto { value, label } — value dal riferimento
+        // (LinkReferencePath, es. l'Id collegato), label dallo StoragePath (es. il nome/descrizione visualizzata).
+        if (field.Kind == FieldKind.Link)
+            return $"json_build_object('value', {field.LinkColumn()}, 'label', {field.SqlColumn()}) AS \"{name}\"";
+
+        // Campo con valore secondario (es. un pulsante "custom" che porta un dato di corredo, tipo
+        // "già stampato?"): proiezione composta { value, <SecondaryResponseKey> }, chiave arbitraria invece
+        // del fisso "label" di Link — vedi FieldDescriptor.SecondaryStoragePath.
+        if (field.SecondaryStoragePath is not null)
+            return $"json_build_object('value', {field.SqlColumn()}, '{field.SecondaryResponseKey}', {field.SecondaryColumn()}) AS \"{name}\"";
 
         // Campo array/collezione, due "facce" (vedi SqlM2MJoin):
         //  - M2M (junction): niente Projection → RICOSTRUISCE l'array con json_group_array sullo stesso join del filtro.

@@ -62,10 +62,21 @@ public sealed class CatalogSqlSchemaProvider : ISqlSchemaProvider
         basePredicate: "workprofile.\"SpaceId\" = @space",
         joins: new Dictionary<string, SqlJoin>(StringComparer.OrdinalIgnoreCase)
         {
-            ["brandName"] = new SqlSimpleJoin("LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"workprofile\".\"BrandId\""),
+            // Il join va registrato per OGNI campo che lo richiede: la clausola FROM si compone dai soli
+            // join dei campi effettivamente usati, quindi un campo non elencato qui manda in errore la
+            // query ("missing FROM-clause entry") appena viene proiettato o filtrato.
+            ["brandName"] = new SqlSimpleJoin(WorkprofileBrandJoin),
+            ["contactEmail"] = new SqlSimpleJoin(WorkprofileBrandJoin),
+            ["createdBy"] = new SqlSimpleJoin(
+                "LEFT JOIN \"Users\" AS \"utentecreatore\" ON \"utentecreatore\".\"Id\" = \"workprofile\".\"CreatedById\""),
+            ["updatedBy"] = new SqlSimpleJoin(
+                "LEFT JOIN \"Users\" AS \"utentemodificatore\" ON \"utentemodificatore\".\"Id\" = \"workprofile\".\"UpdatedById\""),
             ["userIds"] = new SqlM2MJoin(WorkprofileUserJoin),
             ["userNames"] = new SqlM2MJoin(WorkprofileUserJoin)
         });
+
+    private const string WorkprofileBrandJoin =
+        "LEFT JOIN \"Brands\" AS \"brand\" ON \"brand\".\"Id\" = \"workprofile\".\"BrandId\"";
 
     private const string WorkprofileUserJoin = $"""
             FROM "UserWorkProfile" AS "uwp"

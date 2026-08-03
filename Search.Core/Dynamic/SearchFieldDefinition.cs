@@ -17,10 +17,16 @@ public sealed record SearchFieldDefinition(
     bool JsonColumn,                    // se il campo è memorizzato in una colonna JSONB (Postgres)
     bool IsArray,
     string Path,
+    string ResponseId,
+    string? LinkReferencePath = null,
+    string? LinkReferenceEntityId = null,
     string? Label = null,
     string? Section = null,
     int? DefaultOrder = null,           // proiezione -> ordine di proiezione fallback (null = non proiettato di default)
     bool IsHidden = false,              // proiezione -> se il campo è nascosto (non proiettabile. Rimane filtrabile/ordinabile)
     Guid? RequiredPermissionId = null,
     Guid? SpaceId = null,
-    bool IsSearchable = false);         // full-text: se il campo partecipa alla ricerca libera (SearchRequest.Search)
+    bool IsSearchable = false,          // full-text: se il campo partecipa alla ricerca libera (SearchRequest.Search)
+    string? SecondaryStoragePath = null,   // vedi FieldDescriptor.SecondaryStoragePath: proiezione composta { value, <chiave> }
+    string? SecondaryResponseKey = null,
+    string? CustomType = null);            // vedi FieldDescriptor.CustomType: "BtnImpersonateUser" ecc., solo per Kind.Custom

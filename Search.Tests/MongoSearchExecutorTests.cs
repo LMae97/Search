@@ -18,7 +18,25 @@ public sealed class MongoSearchExecutorTests
         Def(E, "id", FieldKind.ObjectId, "_id"),
         Def(E, "name", FieldKind.String, "name", searchable: true),
         Def(E, "description", FieldKind.String, "description", searchable: true),
-        Def(E, "createdAt", FieldKind.DateTime, "createdAt")));
+        Def(E, "createdAt", FieldKind.DateTime, "createdAt"),
+        // Pulsante "custom" con un dato di corredo (vedi SqlSearchQueryBuilderTests, stesso concetto lato SQL).
+        Def(E, "btnDownloadAll", FieldKind.Custom, "downloadAllUrl",
+            secondaryPath: "isPrinted", secondaryKey: "isPrinted")));
+
+    [Fact]
+    public void A_field_with_a_secondary_path_projects_a_composite_object()
+    {
+        var plan = Executor().BuildPlan(new SearchRequest { Projection = ["btnDownloadAll"] });
+
+        var composite = plan.Projection["btnDownloadAll"].AsBsonDocument;
+        Assert.Equal("$downloadAllUrl", composite["value"].AsString);
+        Assert.Equal("$isPrinted", composite["isPrinted"].AsString);
+
+        // L'alias diventa il "path" da rileggere: la sotto-struttura sta sotto il proprio nome, non sotto
+        // il path originale del documento.
+        var field = Assert.Single(plan.Fields, f => f.Name == "btnDownloadAll");
+        Assert.Equal("btnDownloadAll", field.Path);
+    }
 
     [Fact]
     public void Projection_includes_requested_paths()

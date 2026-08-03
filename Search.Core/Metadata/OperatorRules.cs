@@ -11,6 +11,11 @@ public static class OperatorRules
 {
     public static IReadOnlySet<FilterOperator> DefaultFor(FieldKind kind, bool isArray)
     {
+        // Un pulsante/immagine non è un dato filtrabile: zero operatori, a prescindere da isArray.
+        // Niente Equals/IsNull nemmeno — non ha senso "filtra dove il bottone è nullo".
+        if (kind == FieldKind.Custom)
+            return new HashSet<FilterOperator>();
+
         if (isArray)
         {
             return new HashSet<FilterOperator>
@@ -37,6 +42,10 @@ public static class OperatorRules
         switch (kind)
         {
             case FieldKind.String:
+            // Un campo Link si filtra e si ordina sulla sua ETICHETTA (lo StoragePath, es. brand."Name"),
+            // non sul riferimento: per chi filtra è testo a tutti gli effetti, quindi stessi operatori
+            // della stringa. Il LinkReferencePath serve solo a comporre la proiezione { value, label }.
+            case FieldKind.Link:
                 operators.UnionWith(new[]
                 {
                     FilterOperator.Contains,

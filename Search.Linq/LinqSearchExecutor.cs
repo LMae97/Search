@@ -63,7 +63,7 @@ public sealed class LinqSearchExecutor<TEntity>
             items.Add(record);
         }
 
-        return new SearchResult<IReadOnlyDictionary<string, object?>>(items, total, request.Page.Number, request.Page.Size);
+        return new SearchResult<IReadOnlyDictionary<string, object?>>(items);
     }
 
     private IQueryable<TEntity> ApplySort(IQueryable<TEntity> query, IReadOnlyList<SortField> sorts)
