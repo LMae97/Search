@@ -13,12 +13,12 @@ public sealed class SearchRequestValidator
     private readonly int _maxPageSize;
 
     /// <param name="maxPageSize">
-    /// Tetto di <see cref="PageRequest.Size"/>, pensato per una griglia UI (200 di default: nessuna
+    /// Tetto di <see cref="PageRequest.Size"/>, pensato per una griglia UI (1000 di default: nessuna
     /// interfaccia ha senso a chiedere di più in una pagina sola). Un batch interno — es. l'export, che
     /// pagina a migliaia di righe per volta — deve passare un tetto più alto, coerente con la propria
     /// dimensione di batch: non è la stessa nozione di "pagina" di una richiesta utente.
     /// </param>
-    public SearchRequestValidator(IEntitySearchMap map, int maxPageSize = 200)
+    public SearchRequestValidator(IEntitySearchMap map, int maxPageSize = 1000)
     {
         _map = map;
         _maxPageSize = maxPageSize;

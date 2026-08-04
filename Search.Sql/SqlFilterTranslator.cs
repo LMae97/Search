@@ -73,6 +73,14 @@ public sealed class SqlFilterTranslator
     {
         var column = field.SqlColumn();
 
+        // FieldKind.DateTime porta un orario nella colonna, ma il valore del filtro arriva sempre a
+        // precisione di solo giorno (vedi ParseValue/ConvertToDateTime): un confronto diretto tratterebbe
+        // "quel giorno" come un istante puntuale (mezzanotte), perdendo tutte le righe con un orario diverso
+        // da 00:00:00 nello stesso giorno. FieldKind.Date non ha questo problema: la colonna è un DATE vero,
+        // senza orario da perdere, quindi il confronto diretto sotto resta corretto.
+        if (field.Kind == FieldKind.DateTime)
+            return BuildDateTimeScalar(node, field, column, parameters);
+
         return node.Operator switch
         {
             // Equals/NotEquals con valore null → IS [NOT] NULL (in SQL "= NULL" è sempre falso).
@@ -103,6 +111,55 @@ public sealed class SqlFilterTranslator
             _ => throw new NotSupportedException(
                 $"Operatore '{node.Operator}' non supportato per il campo scalare '{field.Name}'.")
         };
+    }
+
+    // Equivalente SQL della vecchia logica di allargamento al giorno (Mongo, acquario-be): Equals/NotEquals
+    // diventano un range sull'intero giorno, GreaterThan salta l'intero giorno indicato (>= giorno successivo,
+    // non solo > mezzanotte), LessThanOrEqual include l'intero giorno (< giorno successivo). GreaterThanOrEqual
+    // e LessThan sono già corretti con un confronto diretto sull'inizio giornata, senza bisogno di allargarli.
+    private string BuildDateTimeScalar(ComparisonFilterNode node, FieldDescriptor field, string column, List<object?> parameters)
+    {
+        string StartOfDay(object? value) => Param(parameters, value, field);
+        string StartOfNextDay(object? value) => Param(parameters, NextDay(value), field);
+
+        return node.Operator switch
+        {
+            FilterOperator.Equals when node.SingleValue is null => $"{column} IS NULL",
+            FilterOperator.NotEquals when node.SingleValue is null => $"{column} IS NOT NULL",
+
+            FilterOperator.Equals =>
+                $"({column} >= {StartOfDay(node.SingleValue)} AND {column} < {StartOfNextDay(node.SingleValue)})",
+            FilterOperator.NotEquals =>
+                $"({column} < {StartOfDay(node.SingleValue)} OR {column} >= {StartOfNextDay(node.SingleValue)})",
+
+            FilterOperator.GreaterThan => $"{column} >= {StartOfNextDay(node.SingleValue)}",
+            FilterOperator.GreaterThanOrEqual => $"{column} >= {StartOfDay(node.SingleValue)}",
+            FilterOperator.LessThan => $"{column} < {StartOfDay(node.SingleValue)}",
+            FilterOperator.LessThanOrEqual => $"{column} < {StartOfNextDay(node.SingleValue)}",
+
+            FilterOperator.Between =>
+                $"({column} >= {StartOfDay(node.Values[0])} AND {column} < {StartOfNextDay(node.Values[1])})",
+
+            FilterOperator.In => $"{column} IN ({ParamList(parameters, node.Values, field)})",
+            FilterOperator.NotIn => $"{column} NOT IN ({ParamList(parameters, node.Values, field)})",
+
+            FilterOperator.IsNull => $"{column} IS NULL",
+            FilterOperator.IsNotNull => $"{column} IS NOT NULL",
+
+            _ => throw new NotSupportedException(
+                $"Operatore '{node.Operator}' non supportato per il campo data/ora '{field.Name}'.")
+        };
+    }
+
+    // Un valore DateTimeOffset passato direttamente (non una stringa) evita un giro inutile per
+    // Coerce/Parse: Coerce riconosce il tipo già giusto e lo restituisce com'è.
+    private static object? NextDay(object? value)
+    {
+        if (value is null)
+            return null;
+
+        DateTimeOffset startOfDay = ConvertToDateTime(value);
+        return startOfDay.AddDays(1);
     }
 
     // --- Array/collezione (M2M): EXISTS correlato -------------------------------------------------

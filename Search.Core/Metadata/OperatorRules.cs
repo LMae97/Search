@@ -58,6 +58,7 @@ public static class OperatorRules
             case FieldKind.Integer:
             case FieldKind.Decimal:
             case FieldKind.DateTime:
+            case FieldKind.Date:
                 operators.UnionWith(new[]
                 {
                     FilterOperator.GreaterThan,

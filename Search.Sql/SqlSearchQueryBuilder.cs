@@ -89,6 +89,29 @@ public sealed class SqlSearchQueryBuilder
         return new SqlQueryPlan(sql, parameters);
     }
 
+    /// <summary>
+    /// Solo <c>FROM ... [WHERE ...]</c> parametrizzato, senza SELECT/ORDER/LIMIT: lo stesso filtro di
+    /// <see cref="Build"/>/<see cref="BuildCount"/>, ma senza decidere cosa proiettare sopra. Per chi deve
+    /// costruire un'aggregazione (GROUP BY, SUM, …) diversa a ogni chiamata sopra lo stesso WHERE — es. un
+    /// motore di analytics — invece di replicare qui ogni possibile forma di SELECT.
+    /// <para>
+    /// Il chiamante compone il proprio <c>SELECT ... {planeSql} GROUP BY ...</c> e lo esegue con lo stesso
+    /// <see cref="SqlSearchExecutor"/> (che accetta un <see cref="SqlQueryPlan"/> qualsiasi, non solo quelli
+    /// prodotti da questa classe).
+    /// </para>
+    /// </summary>
+    public SqlQueryPlan BuildFilteredBase(SearchRequest request, Guid spaceId)
+    {
+        var parameters = new Dictionary<string, object?>();
+        var where = BuildWhere(request.Filter, parameters);
+        var from = BuildFrom(FilterFields(request.Filter));
+
+        var sql = $"{from}\n{where}".TrimEnd();
+        BindSpace(sql, parameters, spaceId);
+
+        return new SqlQueryPlan(sql, parameters);
+    }
+
     // @space è un parametro "ambient" (tenant del caller, non un filtro utente): compare nell'SQL solo quando è
     // stato emesso un join che lo referenzia (es. workProfile proiettato/filtrato). Lo leghiamo solo se davvero
     // presente nel testo, così non passiamo mai un parametro inutilizzato quando quel join non c'è.

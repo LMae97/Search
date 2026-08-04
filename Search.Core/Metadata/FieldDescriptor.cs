@@ -10,6 +10,8 @@ namespace WeByte.Search.Core.Metadata;
 /// </summary>
 public sealed class FieldDescriptor
 {
+    public string Context { get; }
+
     /// <summary>Nome pubblico esposto al FE (parte del contratto, es. "price").</summary>
     public string Name { get; }
 
@@ -93,6 +95,7 @@ public sealed class FieldDescriptor
     public bool IsSearchable { get; init; }
 
     private FieldDescriptor(
+        string context,
         string name,
         string responseId,
         FieldKind kind,
@@ -108,6 +111,7 @@ public sealed class FieldDescriptor
         Guid? requiredPermissionId,
         IReadOnlySet<FilterOperator> allowedOperators)
     {
+        Context = context;
         Name = name;
         ResponseId = responseId;
         Kind = kind;
@@ -125,6 +129,7 @@ public sealed class FieldDescriptor
     }
 
     public static FieldDescriptor BuildPathBased(
+        string context,
         string storagePath,
         string name,
         string responseId,
@@ -145,7 +150,7 @@ public sealed class FieldDescriptor
         string? secondaryResponseKey = null,
         string? customType = null)
     {
-        return new FieldDescriptor(name, responseId, kind, isArray, clrType, jsonColumn,
+        return new FieldDescriptor(context, name, responseId, kind, isArray, clrType, jsonColumn,
             linkReferencePath, linkReferenceEntityId, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
@@ -158,6 +163,7 @@ public sealed class FieldDescriptor
     }
 
     public static FieldDescriptor BuildSelectorBased(
+        string context,
         LambdaExpression selector,
         string name,
         string responseId,
@@ -175,7 +181,7 @@ public sealed class FieldDescriptor
         IReadOnlySet<FilterOperator> allowedOperators,
         bool isSearchable = false)
     {
-        return new FieldDescriptor(name, responseId, kind, isArray, clrType, jsonColumn,
+        return new FieldDescriptor(context, name, responseId, kind, isArray, clrType, jsonColumn,
             linkReferencePath, linkReferenceEntityId, label, section,
             defaultOrder, isHidden, requiredPermissionId, allowedOperators)
         {
@@ -185,4 +191,15 @@ public sealed class FieldDescriptor
     }
 
     public bool Supports(FilterOperator op) => AllowedOperators.Contains(op);
+
+    public string GetResponseKey()
+    {
+        return
+            Context == "contracts" ||
+            Context == "contract-products"
+               ? string.IsNullOrEmpty(ResponseId)
+                    ? StoragePath!.Replace(".", ">")
+                    : ResponseId
+               : ResponseId;
+    }
 }

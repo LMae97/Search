@@ -102,6 +102,12 @@ public sealed class MongoFilterTranslator<TDocument>
         BsonArray Array() => new(node.Values.Select(Value));
         BsonDocument Op(string @operator, BsonValue value) => new(path, new BsonDocument(@operator, value));
 
+        // Mongo non ha un tipo BSON "solo data": anche FieldKind.Date finisce salvato come BsonDateTime a
+        // mezzanotte, quindi entrambi i tipi condividono lo stesso problema del vecchio acquario-be — il
+        // valore del filtro arriva a precisione di solo giorno, ma la colonna può portare un orario.
+        if (field.Kind is FieldKind.Date or FieldKind.DateTime)
+            return BuildDateComparison(node, path);
+
         return node.Operator switch
         {
             FilterOperator.Equals => new BsonDocument(path, Value(node.SingleValue)),
@@ -137,6 +143,57 @@ public sealed class MongoFilterTranslator<TDocument>
             _ => throw new NotSupportedException($"Operatore {node.Operator} non supportato per Mongo.")
         };
     }
+
+    // Equivalente Mongo della vecchia logica di allargamento al giorno (HandleEq/Ne/Gt/Lt/LteOperation in
+    // acquario-be): Equals/NotEquals diventano un range sull'intero giorno, GreaterThan salta l'intero
+    // giorno indicato (>= giorno successivo, non solo dopo mezzanotte), LessThanOrEqual include l'intero
+    // giorno (< giorno successivo). GreaterThanOrEqual e LessThan sono già corretti con un confronto diretto
+    // sull'inizio giornata. A differenza del vecchio codice non c'è conversione al fuso orario utente (qui,
+    // come nel resto del motore, i valori sono trattati come UTC — vedi ValueCoercion).
+    private static BsonDocument BuildDateComparison(ComparisonFilterNode node, string path)
+    {
+        BsonValue StartOfDay(object? raw) => new BsonDateTime(DayUtc(raw));
+        BsonValue StartOfNextDay(object? raw) => new BsonDateTime(DayUtc(raw).AddDays(1));
+
+        return node.Operator switch
+        {
+            FilterOperator.Equals when node.SingleValue is null => new BsonDocument(path, BsonNull.Value),
+            FilterOperator.NotEquals when node.SingleValue is null => new BsonDocument(path, new BsonDocument("$ne", BsonNull.Value)),
+
+            FilterOperator.Equals => new BsonDocument(path, new BsonDocument
+            {
+                { "$gte", StartOfDay(node.SingleValue) },
+                { "$lt", StartOfNextDay(node.SingleValue) }
+            }),
+            FilterOperator.NotEquals => new BsonDocument("$or", new BsonArray
+            {
+                new BsonDocument(path, new BsonDocument("$lt", StartOfDay(node.SingleValue))),
+                new BsonDocument(path, new BsonDocument("$gte", StartOfNextDay(node.SingleValue)))
+            }),
+
+            FilterOperator.GreaterThan => new BsonDocument(path, new BsonDocument("$gte", StartOfNextDay(node.SingleValue))),
+            FilterOperator.GreaterThanOrEqual => new BsonDocument(path, new BsonDocument("$gte", StartOfDay(node.SingleValue))),
+            FilterOperator.LessThan => new BsonDocument(path, new BsonDocument("$lt", StartOfDay(node.SingleValue))),
+            FilterOperator.LessThanOrEqual => new BsonDocument(path, new BsonDocument("$lt", StartOfNextDay(node.SingleValue))),
+
+            FilterOperator.Between => new BsonDocument(path, new BsonDocument
+            {
+                { "$gte", StartOfDay(node.Values[0]) },
+                { "$lt", StartOfNextDay(node.Values[1]) }
+            }),
+
+            FilterOperator.In => new BsonDocument(path, new BsonDocument("$in", new BsonArray(node.Values.Select(v => StartOfDay(v))))),
+            FilterOperator.NotIn => new BsonDocument(path, new BsonDocument("$nin", new BsonArray(node.Values.Select(v => StartOfDay(v))))),
+
+            FilterOperator.IsNull => new BsonDocument(path, new BsonDocument("$eq", BsonNull.Value)),
+            FilterOperator.IsNotNull => new BsonDocument(path, new BsonDocument("$ne", BsonNull.Value)),
+
+            _ => throw new NotSupportedException($"Operatore {node.Operator} non supportato per un campo data/ora.")
+        };
+    }
+
+    private static DateTime DayUtc(object? raw) =>
+        ((DateTimeOffset)ValueCoercion.Coerce(raw, typeof(DateTimeOffset))!).UtcDateTime.Date;
 
     /**
      * System.Text.RegularExpressions.Regex.Escape(...) mette il backslash davanti ai caratteri speciali, 

@@ -64,6 +64,13 @@ public sealed class LinqFilterTranslator<TEntity>
 
     private static Expression BuildScalar(ComparisonFilterNode node, FieldDescriptor field, Expression member)
     {
+        // FieldKind.DateTime porta un orario nel membro, ma il valore del filtro arriva sempre a precisione
+        // di solo giorno: un confronto diretto tratterebbe "quel giorno" come un istante puntuale
+        // (mezzanotte), perdendo le righe con un orario diverso da 00:00:00 nello stesso giorno. Stessa
+        // logica di allargamento di SqlFilterTranslator/MongoFilterTranslator, qui in forma di Expression.
+        if (field.Kind == FieldKind.DateTime)
+            return BuildDateTimeScalar(node, field, member);
+
         switch (node.Operator)
         {
             case FilterOperator.IsNull:
@@ -108,6 +115,62 @@ public sealed class LinqFilterTranslator<TEntity>
                 throw new NotSupportedException($"Operatore {node.Operator} non valido sul campo scalare '{field.Name}'.");
         }
     }
+
+    // GreaterThan salta l'intero giorno indicato (>= giorno successivo, non solo dopo mezzanotte),
+    // LessThanOrEqual include l'intero giorno (< giorno successivo). GreaterThanOrEqual e LessThan sono
+    // già corretti con un confronto diretto sull'inizio giornata.
+    private static Expression BuildDateTimeScalar(ComparisonFilterNode node, FieldDescriptor field, Expression member)
+    {
+        // A differenza di Constant() (usata per gli altri tipi), qui il valore va sempre troncato all'inizio
+        // giornata prima di diventare una costante: altrimenti un orario diverso da mezzanotte nel filtro
+        // (accettato ma non significativo per un campo a precisione di solo giorno) romperebbe i confronti.
+        Expression StartOfDay(object? value) => Constant(DayUtc(value), field, member.Type);
+        Expression StartOfNextDay(object? value) => Constant(NextDay(value), field, member.Type);
+
+        switch (node.Operator)
+        {
+            case FilterOperator.Equals when node.SingleValue is null:
+                return NullCheck(member, isNull: true);
+            case FilterOperator.NotEquals when node.SingleValue is null:
+                return NullCheck(member, isNull: false);
+
+            case FilterOperator.Equals:
+                return Expression.AndAlso(
+                    Expression.GreaterThanOrEqual(member, StartOfDay(node.SingleValue)),
+                    Expression.LessThan(member, StartOfNextDay(node.SingleValue)));
+            case FilterOperator.NotEquals:
+                return Expression.OrElse(
+                    Expression.LessThan(member, StartOfDay(node.SingleValue)),
+                    Expression.GreaterThanOrEqual(member, StartOfNextDay(node.SingleValue)));
+
+            case FilterOperator.GreaterThan:
+                return Expression.GreaterThanOrEqual(member, StartOfNextDay(node.SingleValue));
+            case FilterOperator.GreaterThanOrEqual:
+                return Expression.GreaterThanOrEqual(member, StartOfDay(node.SingleValue));
+            case FilterOperator.LessThan:
+                return Expression.LessThan(member, StartOfDay(node.SingleValue));
+            case FilterOperator.LessThanOrEqual:
+                return Expression.LessThan(member, StartOfNextDay(node.SingleValue));
+
+            case FilterOperator.Between:
+                return Expression.AndAlso(
+                    Expression.GreaterThanOrEqual(member, StartOfDay(node.Values[0])),
+                    Expression.LessThan(member, StartOfNextDay(node.Values[1])));
+
+            case FilterOperator.In:
+                return BuildIn(member, field, node.Values, negate: false);
+            case FilterOperator.NotIn:
+                return BuildIn(member, field, node.Values, negate: true);
+
+            default:
+                throw new NotSupportedException($"Operatore {node.Operator} non valido sul campo data/ora '{field.Name}'.");
+        }
+    }
+
+    private static DateTimeOffset? DayUtc(object? value) =>
+        value is null ? null : new DateTimeOffset(((DateTimeOffset)ValueCoercion.Coerce(value, typeof(DateTimeOffset))!).UtcDateTime.Date, TimeSpan.Zero);
+
+    private static DateTimeOffset? NextDay(object? value) => DayUtc(value)?.AddDays(1);
 
     private static Expression Constant(object? rawValue, FieldDescriptor field, Type memberType)
     {

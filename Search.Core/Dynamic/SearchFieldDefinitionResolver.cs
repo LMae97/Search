@@ -45,6 +45,7 @@ public sealed class SearchFieldDefinitionResolver
         var (kind, underlying) = FieldKindResolver.Resolve(valueType);
 
         return FieldDescriptor.BuildSelectorBased(
+            context: definition.EntityName,
             selector: selector,
             name: definition.Name,
             responseId: definition.ResponseId,
@@ -71,6 +72,7 @@ public sealed class SearchFieldDefinitionResolver
         var clrType = ClrTypeFor(definition.Kind);
 
         return FieldDescriptor.BuildPathBased(
+            context: definition.EntityName,
             storagePath: definition.Path,
             name: definition.Name,
             responseId: definition.ResponseId,
@@ -100,6 +102,7 @@ public sealed class SearchFieldDefinitionResolver
         FieldKind.Decimal => typeof(decimal),
         FieldKind.Boolean => typeof(bool),
         FieldKind.DateTime => typeof(DateTimeOffset),
+        FieldKind.Date => typeof(DateOnly),
         FieldKind.Guid => typeof(Guid),
         FieldKind.Enum => typeof(string), // "enum" documentale senza tipo CLR: trattato come stringa
         FieldKind.ObjectId => typeof(string), // hex a 24 char: coerciato come stringa, poi BsonObjectId nel translator
